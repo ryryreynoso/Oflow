@@ -1,0 +1,3359 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>BTC Orderflow Chart</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+```
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #0a0a0a;
+        color: #fff;
+        overflow: hidden;
+    }
+
+    #app { 
+        display: flex; 
+        flex-direction: column; 
+        height: 100vh; 
+    }
+    
+    #header {
+        background: #141414;
+        padding: 8px 16px;
+        border-bottom: 1px solid #2a2a2a;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    #symbol { 
+        font-size: 14px; 
+        font-weight: 700; 
+        color: #fbbf24; 
+    }
+    
+    .toolbar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .tool-btn {
+        padding: 6px 12px;
+        background: #1a1a1a;
+        border: 1px solid #2a2a2a;
+        color: #fff;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+
+    .tool-btn:hover { background: #2a2a2a; }
+    .tool-btn.active { background: #3b82f6; border-color: #3b82f6; }
+
+    .tick-input {
+        width: 70px;
+        padding: 4px 8px;
+        background: #1a1a1a;
+        border: 1px solid #2a2a2a;
+        color: #fff;
+        border-radius: 4px;
+        font-size: 11px;
+        font-family: monospace;
+    }
+
+    .tick-label {
+        font-size: 11px;
+        color: #6b7280;
+    }
+
+    #mainContent {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    #leftToolbar {
+        width: 60px;
+        background: #0a0a0a;
+        border-right: 1px solid #2a2a2a;
+        display: flex;
+        flex-direction: column;
+        padding: 8px 4px;
+        gap: 8px;
+    }
+
+    .left-tool-btn {
+        width: 52px;
+        height: 52px;
+        background: #141414;
+        border: 1px solid #2a2a2a;
+        border-radius: 6px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .left-tool-btn:hover {
+        background: #2a2a2a;
+        border-color: #3b82f6;
+    }
+
+    .left-tool-btn.active {
+        background: #3b82f6;
+        border-color: #3b82f6;
+    }
+
+    .tool-icon {
+        font-size: 20px;
+        margin-bottom: 2px;
+    }
+
+    .tool-name {
+        font-size: 8px;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .left-tool-btn.active .tool-name {
+        color: #fff;
+    }
+
+    /* Context Menu */
+    #contextMenu {
+        position: fixed;
+        background: #1a1a1a;
+        border: 1px solid #3b82f6;
+        border-radius: 6px;
+        padding: 4px;
+        min-width: 180px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        z-index: 1000;
+        display: none;
+    }
+
+    .context-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 12px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .context-item:hover {
+        background: #2a2a2a;
+    }
+
+    .context-item.danger:hover {
+        background: #ef4444;
+    }
+
+    .context-separator {
+        height: 1px;
+        background: #2a2a2a;
+        margin: 4px 0;
+    }
+
+    /* Settings Modal */
+    #settingsModal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.9);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+    }
+
+    /* Quick Fib Settings Popup */
+    #quickFibSettings {
+        position: fixed;
+        background: #1a1a1a;
+        border: 2px solid #3b82f6;
+        border-radius: 8px;
+        padding: 12px;
+        min-width: 200px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+        z-index: 1500;
+        display: none;
+    }
+
+    .quick-settings-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: #3b82f6;
+        margin-bottom: 8px;
+        text-align: center;
+    }
+
+    .quick-color-picker {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 8px;
+        justify-content: center;
+    }
+
+    .color-option {
+        width: 28px;
+        height: 28px;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: all 0.2s;
+    }
+
+    .color-option:hover {
+        transform: scale(1.1);
+    }
+
+    .color-option.selected {
+        border-color: #fff;
+        box-shadow: 0 0 8px rgba(255,255,255,0.5);
+    }
+
+    .quick-levels {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        margin-bottom: 8px;
+    }
+
+    .quick-level-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .quick-level-toggle {
+        background: #0a0a0a;
+        padding: 6px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        cursor: pointer;
+        text-align: center;
+        border: 1px solid #2a2a2a;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4px;
+    }
+
+    .quick-level-toggle.active {
+        background: #3b82f6;
+        border-color: #3b82f6;
+    }
+
+    .level-color-picker {
+        width: 20px;
+        height: 20px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        padding: 0;
+    }
+
+    .quick-template-btn {
+        width: 100%;
+        padding: 6px;
+        background: #2a2a2a;
+        border: 1px solid #3b82f6;
+        border-radius: 4px;
+        color: #3b82f6;
+        font-size: 11px;
+        cursor: pointer;
+        margin-top: 4px;
+    }
+
+    .quick-template-btn:hover {
+        background: #3b82f6;
+        color: #fff;
+    }
+
+    .settings-box {
+        background: #1a1a1a;
+        border: 1px solid #2a2a2a;
+        border-radius: 8px;
+        padding: 20px;
+        width: 90%;
+        max-width: 400px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .settings-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: #3b82f6;
+    }
+
+    .setting-group {
+        margin-bottom: 16px;
+    }
+
+    .setting-label {
+        font-size: 11px;
+        color: #9ca3af;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .setting-input {
+        width: 100%;
+        padding: 8px;
+        background: #0a0a0a;
+        border: 1px solid #2a2a2a;
+        border-radius: 4px;
+        color: #fff;
+        font-size: 12px;
+    }
+
+    .setting-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        background: #0a0a0a;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .setting-checkbox input {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+    }
+
+    .setting-checkbox label {
+        font-size: 12px;
+        cursor: pointer;
+        flex: 1;
+    }
+
+    .settings-buttons {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+    }
+
+    .settings-btn {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .settings-btn.primary {
+        background: #3b82f6;
+        color: #fff;
+    }
+
+    .settings-btn.secondary {
+        background: #2a2a2a;
+        color: #fff;
+    }
+
+    #chartContainer {
+        flex: 1;
+        position: relative;
+        background: #000;
+        overflow: hidden;
+    }
+
+    #canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        cursor: crosshair;
+        touch-action: none; /* Prevent default touch behaviors */
+    }
+
+    #tooltip {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 80px;
+        background: rgba(20, 20, 20, 0.98);
+        border-top: 1px solid #3b82f6;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-family: monospace;
+        pointer-events: none;
+        z-index: 100;
+        color: #fbbf24;
+        text-align: center;
+    }
+
+    #crosshair {
+        position: absolute;
+        pointer-events: none;
+        z-index: 50;
+        display: none;
+    }
+
+    .crosshair-line-h {
+        position: absolute;
+        width: 100%;
+        height: 1px;
+        background: rgba(59, 130, 246, 0.5);
+        left: 0;
+    }
+
+    .crosshair-line-v {
+        position: absolute;
+        width: 1px;
+        height: 100%;
+        background: rgba(59, 130, 246, 0.5);
+        top: 0;
+    }
+
+    .crosshair-price {
+        position: absolute;
+        right: -70px;
+        background: #3b82f6;
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-family: monospace;
+        white-space: nowrap;
+    }
+
+    #statsTable {
+        background: #0a0a0a;
+        border-top: 1px solid #2a2a2a;
+        min-height: 100px;
+        display: flex;
+        position: relative;
+        overflow: hidden;
+        padding: 0;
+        gap: 0;
+    }
+
+    .stats-labels {
+        display: flex;
+        flex-direction: column;
+        width: 80px;
+        min-width: 80px;
+        max-width: 80px;
+        position: relative;
+        background: #0a0a0a;
+        z-index: 10;
+        padding: 0;
+        gap: 0;
+        flex-shrink: 0;
+    }
+
+    .stats-container {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        background: #0a0a0a;
+    }
+
+    .stats-canvas-overlay {
+        position: absolute;
+        display: flex;
+        gap: 2px;
+        top: 0;
+        left: 0;
+    }
+
+    .candle-column {
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        gap: 0;
+    }
+
+    .stat-cell {
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: monospace;
+        font-size: 12px;
+        font-weight: 700;
+        border: 1px solid #1a1a1a;
+    }
+
+    .stat-label-cell {
+        width: 80px;
+        height: 28px;
+        background: #141414;
+        color: #6b7280;
+        font-size: 11px;
+        text-align: right;
+        padding-right: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        border: 1px solid #1a1a1a;
+        box-sizing: border-box;
+    }
+
+    .volume-cell { background: #1e3a5f; color: #60a5fa; }
+    .delta-cell.positive { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+    .delta-cell.negative { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+    .cvd-cell.positive { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .cvd-cell.negative { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+    #startModal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.95);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    #startModal.hidden { display: none; }
+
+    .modal-box {
+        background: #141414;
+        border: 1px solid #2a2a2a;
+        border-radius: 8px;
+        padding: 24px;
+        max-width: 400px;
+    }
+
+    .modal-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 16px;
+    }
+
+    .start-btn {
+        width: 100%;
+        padding: 12px;
+        background: #3b82f6;
+        border: none;
+        border-radius: 4px;
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .start-btn:hover { background: #2563eb; }
+</style>
+```
+
+</head>
+<body>
+    <div id="app">
+        <div id="header">
+            <div id="symbol">BTC/USDT - Connecting to Bybit...</div>
+            <div class="toolbar">
+                <span class="tick-label">Timeframe:</span>
+                <select id="timeframeSelect" style="padding: 6px 10px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 4px; color: #fff; font-size: 12px; cursor: pointer;">
+                    <option value="60000">1m</option>
+                    <option value="300000" selected>5m</option>
+                    <option value="900000">15m</option>
+                    <option value="3600000">1h</option>
+                    <option value="86400000">Daily</option>
+                </select>
+                <span class="tick-label" style="margin-left: 16px;">Tick Size:</span>
+                <input type="number" class="tick-input" id="tickSizeInput" value="0.25" step="0.01" min="0.01">
+                <button class="tool-btn" onclick="zoom(1.2)">🔍 Zoom In</button>
+                <button class="tool-btn" onclick="zoom(0.8)">🔍 Zoom Out</button>
+                <button class="tool-btn" onclick="resetZoom()">↺ Reset</button>
+                <button class="tool-btn" id="volumeProfileBtn" onclick="toggleVolumeProfile()">📊 Volume Profile</button>
+            </div>
+        </div>
+
+```
+    <div id="mainContent">
+        <!-- Left Toolbar -->
+        <div id="leftToolbar">
+            <div class="left-tool-btn active" id="cursorTool" title="Cursor (Move Chart)">
+                <div class="tool-icon">↖️</div>
+                <div class="tool-name">Cursor</div>
+            </div>
+            <div class="left-tool-btn" id="lineTool" title="Horizontal Line">
+                <div class="tool-icon">📏</div>
+                <div class="tool-name">Line</div>
+            </div>
+            <div class="left-tool-btn" id="fibTool" title="Fibonacci Retracement">
+                <div class="tool-icon">📐</div>
+                <div class="tool-name">Fib</div>
+            </div>
+        </div>
+
+        <div id="chartContainer">
+            <canvas id="canvas"></canvas>
+            <div id="tooltip"></div>
+            <div id="crosshair">
+                <div class="crosshair-line-h">
+                    <div class="crosshair-price"></div>
+                </div>
+                <div class="crosshair-line-v"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="statsTable">
+        <div class="stats-labels">
+            <div class="stat-label-cell">Volume</div>
+            <div class="stat-label-cell">Delta</div>
+            <div class="stat-label-cell">CVD</div>
+        </div>
+        <div class="stats-container">
+            <div class="stats-canvas-overlay" style="left: 80px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Fib Settings -->
+<div id="quickFibSettings">
+    <div class="quick-settings-title">Fib Settings</div>
+    <div style="margin-bottom: 8px;">
+        <div style="font-size: 10px; color: #6b7280; margin-bottom: 4px;">Overall Color:</div>
+        <div class="quick-color-picker">
+            <div class="color-option" data-color="#3b82f6" style="background: #3b82f6;"></div>
+            <div class="color-option" data-color="#10b981" style="background: #10b981;"></div>
+            <div class="color-option" data-color="#f59e0b" style="background: #f59e0b;"></div>
+            <div class="color-option" data-color="#ef4444" style="background: #ef4444;"></div>
+            <div class="color-option" data-color="#8b5cf6" style="background: #8b5cf6;"></div>
+            <div class="color-option" data-color="#fbbf24" style="background: #fbbf24;"></div>
+        </div>
+    </div>
+    <div class="quick-levels">
+        <div class="quick-level-item">
+            <label class="quick-level-toggle" data-level="fib0">
+                <span>0.0</span>
+                <input type="color" class="level-color-picker" data-level="fib0">
+            </label>
+        </div>
+        <div class="quick-level-item">
+            <label class="quick-level-toggle" data-level="fib236">
+                <span>0.236</span>
+                <input type="color" class="level-color-picker" data-level="fib236">
+            </label>
+        </div>
+        <div class="quick-level-item">
+            <label class="quick-level-toggle" data-level="fib382">
+                <span>0.382</span>
+                <input type="color" class="level-color-picker" data-level="fib382">
+            </label>
+        </div>
+        <div class="quick-level-item">
+            <label class="quick-level-toggle" data-level="fib50">
+                <span>0.5</span>
+                <input type="color" class="level-color-picker" data-level="fib50">
+            </label>
+        </div>
+        <div class="quick-level-item">
+            <label class="quick-level-toggle" data-level="fib618">
+                <span>0.618</span>
+                <input type="color" class="level-color-picker" data-level="fib618">
+            </label>
+        </div>
+        <div class="quick-level-item">
+            <label class="quick-level-toggle" data-level="fib66">
+                <span>0.66</span>
+                <input type="color" class="level-color-picker" data-level="fib66">
+            </label>
+        </div>
+        <div class="quick-level-item">
+            <label class="quick-level-toggle" data-level="fib786">
+                <span>0.786</span>
+                <input type="color" class="level-color-picker" data-level="fib786">
+            </label>
+        </div>
+        <div class="quick-level-item">
+            <label class="quick-level-toggle" data-level="fib100">
+                <span>1.0</span>
+                <input type="color" class="level-color-picker" data-level="fib100">
+            </label>
+        </div>
+    </div>
+    <button class="quick-template-btn" id="saveTemplate">💾 Save as Template</button>
+</div>
+
+<!-- dxFeed Settings Modal -->
+<div id="dxfeedSettingsModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2500; align-items: center; justify-content: center;">
+    <div style="background: #1a1a1a; border: 2px solid #3b82f6; border-radius: 12px; padding: 24px; max-width: 500px; width: 90%;">
+        <div style="font-size: 18px; font-weight: 700; color: #3b82f6; margin-bottom: 20px;">📡 dxFeed Data Connection</div>
+        
+        <div style="background: #0a0a0a; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 12px; line-height: 1.6;">
+            <div style="color: #10b981; font-weight: 600; margin-bottom: 8px;">✓ What You Get:</div>
+            <div style="color: #6b7280; margin-left: 12px;">• Real-time ES futures data</div>
+            <div style="color: #6b7280; margin-left: 12px;">• Live bid/ask orderflow</div>
+            <div style="color: #6b7280; margin-left: 12px;">• Volume profile updates</div>
+            <div style="color: #6b7280; margin-left: 12px;">• Professional market depth</div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+            <label style="display: block; color: #6b7280; font-size: 12px; margin-bottom: 6px;">Enable Live Data:</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="dxfeedEnabledCheckbox" style="width: 18px; height: 18px; cursor: pointer;">
+                <span style="color: #fff; font-size: 14px;">Connect to dxFeed</span>
+            </label>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+            <label style="display: block; color: #6b7280; font-size: 12px; margin-bottom: 6px;">API Token:</label>
+            <input type="password" id="dxfeedTokenInput" placeholder="Enter your dxFeed API token" 
+                   style="width: 100%; padding: 8px 12px; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 4px; color: #fff; font-size: 14px; font-family: monospace;">
+            <div style="color: #6b7280; font-size: 11px; margin-top: 4px;">Get your token from dxfeed.com</div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+            <label style="display: block; color: #6b7280; font-size: 12px; margin-bottom: 6px;">Symbol:</label>
+            <select id="dxfeedSymbolSelect" style="width: 100%; padding: 8px 12px; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 4px; color: #fff; font-size: 14px;">
+                <option value="ESH25">ESH25 - March 2025</option>
+                <option value="ESM25">ESM25 - June 2025</option>
+                <option value="ESU25">ESU25 - September 2025</option>
+                <option value="ESZ25">ESZ25 - December 2025</option>
+            </select>
+            <div style="color: #6b7280; font-size: 11px; margin-top: 4px;">Timeframe selector is in the toolbar above</div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 20px;">
+            <button onclick="saveDxFeedSettings()" style="flex: 1; padding: 10px; background: #3b82f6; border: none; border-radius: 6px; color: #fff; font-weight: 600; cursor: pointer;">
+                Save & Connect
+            </button>
+            <button onclick="closeDxFeedSettings()" style="flex: 1; padding: 10px; background: #2a2a2a; border: none; border-radius: 6px; color: #fff; font-weight: 600; cursor: pointer;">
+                Cancel
+            </button>
+        </div>
+
+        <div style="margin-top: 16px; padding: 12px; background: #0a0a0a; border-radius: 6px; border-left: 3px solid #f59e0b;">
+            <div style="color: #f59e0b; font-size: 12px; font-weight: 600; margin-bottom: 4px;">📖 Quick Start:</div>
+            <div style="color: #6b7280; font-size: 11px; line-height: 1.5;">
+                1. Sign up at dxfeed.com<br>
+                2. Get API token from dashboard<br>
+                3. Enter token above<br>
+                4. Enable connection<br>
+                5. Watch live data flow!
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Context Menu -->
+<div id="contextMenu">
+    <div class="context-item" id="ctxSettings">⚙️ Settings</div>
+    <div class="context-separator"></div>
+    <div class="context-item danger" id="ctxDelete">🗑️ Delete</div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsModal">
+    <div class="settings-box">
+        <div class="settings-title" id="settingsTitle">Settings</div>
+        
+        <!-- Fib Settings -->
+        <div id="fibSettings" style="display: none;">
+            <div class="setting-group">
+                <label class="setting-label">Color</label>
+                <input type="color" class="setting-input" id="fibColor" value="#3b82f6">
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label">Line Style</label>
+                <select class="setting-input" id="fibStyle">
+                    <option value="solid">Solid</option>
+                    <option value="dashed">Dashed</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">Levels</label>
+                <div class="setting-checkbox">
+                    <input type="checkbox" id="fib0" checked>
+                    <label for="fib0">0.0</label>
+                </div>
+                <div class="setting-checkbox">
+                    <input type="checkbox" id="fib236" checked>
+                    <label for="fib236">0.236</label>
+                </div>
+                <div class="setting-checkbox">
+                    <input type="checkbox" id="fib382" checked>
+                    <label for="fib382">0.382</label>
+                </div>
+                <div class="setting-checkbox">
+                    <input type="checkbox" id="fib50" checked>
+                    <label for="fib50">0.5</label>
+                </div>
+                <div class="setting-checkbox">
+                    <input type="checkbox" id="fib618" checked>
+                    <label for="fib618">0.618</label>
+                </div>
+                <div class="setting-checkbox">
+                    <input type="checkbox" id="fib66" checked>
+                    <label for="fib66">0.66</label>
+                </div>
+                <div class="setting-checkbox">
+                    <input type="checkbox" id="fib786" checked>
+                    <label for="fib786">0.786</label>
+                </div>
+                <div class="setting-checkbox">
+                    <input type="checkbox" id="fib100" checked>
+                    <label for="fib100">1.0</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Line Settings -->
+        <div id="lineSettings" style="display: none;">
+            <div class="setting-group">
+                <label class="setting-label">Color</label>
+                <input type="color" class="setting-input" id="lineColor" value="#fbbf24">
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label">Line Style</label>
+                <select class="setting-input" id="lineStyle">
+                    <option value="solid">Solid</option>
+                    <option value="dashed" selected>Dashed</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-label">Line Width</label>
+                <input type="number" class="setting-input" id="lineWidth" value="2" min="1" max="5">
+            </div>
+        </div>
+
+        <div class="settings-buttons">
+            <button class="settings-btn secondary" id="cancelSettings">Cancel</button>
+            <button class="settings-btn primary" id="saveSettings">Save</button>
+        </div>
+    </div>
+</div>
+
+<div id="startModal">
+    <div class="modal-box">
+        <div class="modal-title">ES Orderflow Chart</div>
+        <p style="color: #9ca3af; margin-bottom: 16px; font-size: 14px;">
+            Demo mode with realistic orderflow data.<br>
+            Bid/ask displayed inside candles with imbalance highlighting.
+        </p>
+        <button class="start-btn" onclick="startDemo()">Start Demo</button>
+    </div>
+</div>
+
+<script>
+    // Global error handler to catch all errors
+    window.onerror = function(message, source, lineno, colno, error) {
+        console.error('❌ UNCAUGHT ERROR:');
+        console.error('Message:', message);
+        console.error('Source:', source);
+        console.error('Line:', lineno, 'Column:', colno);
+        if (error) console.error('Stack:', error.stack);
+        
+        // Show error in UI
+        const symbolEl = document.getElementById('symbol');
+        if (symbolEl) {
+            symbolEl.textContent = 'ERROR: ' + message;
+            symbolEl.style.color = '#ef4444';
+        }
+        
+        return false;
+    };
+
+    // Config
+    const CONFIG = {
+        candleWidth: 140,
+        candleGap: 4,
+        startPrice: 45000,  // Bitcoin starting price
+        tickSize: 0.50,     // BTC tick size ($0.50)
+        priceScale: 2.5,
+        imbalanceThreshold: 1.5,
+        volumeProfileWidth: 150,  // Width of volume profile bars
+        showVolumeProfile: false  // Toggle for volume profile
+    };
+
+    // State
+    let candles = [];
+    let currentCandle = null;
+    let lines = []; // { price, x, color, style, width }
+    let fibs = []; // { startPrice, endPrice, startX, endX, color, style, levels }
+    let currentTool = 'cursor'; // 'cursor', 'line', or 'fib'
+    let fibDrawing = null; // { startPrice, startX }
+    let zoomLevel = 1;
+    let scrollOffset = 0; // Horizontal scroll
+    let verticalOffset = 0; // Vertical scroll for moving candles up/down
+    let priceScaleZoom = 1;
+    let isDraggingPriceScale = false;
+    let priceScaleDragStart = 0;
+    let priceScaleScrollStart = 0; // For scroll-based zoom
+    let volumeProfile = {};
+    let volumeProfileData = {}; // Aggregated volume at each price for visible range
+    
+    // Momentum scrolling
+    let velocityX = 0;
+    let velocityY = 0;
+    let lastMoveTime = Date.now();
+    let isDecelerating = false;
+    let animationFrame = null;
+    let selectedObject = null; // For context menu
+    let contextMenuType = null; // 'line' or 'fib'
+    let isDraggingObject = false; // For moving lines/fibs
+    let draggedObject = null; // The object being dragged
+    let draggedObjectType = null; // 'line' or 'fib'
+    let dragStartPrice = 0;
+    let priceScaleTouchStart = 0; // For touch-based price scale scrolling
+    let isPriceScaleTouching = false;
+    
+    // Fib template settings (saved forever)
+    let fibTemplate = JSON.parse(localStorage.getItem('fibTemplate') || JSON.stringify({
+        color: '#3b82f6',
+        style: 'dashed',
+        levels: {
+            fib0: false,
+            fib236: false,
+            fib382: false,
+            fib50: true,
+            fib618: true,
+            fib66: true,
+            fib786: true,
+            fib100: false
+        }
+    }));
+
+    // ============================================
+    // EXCHANGE DATA CONNECTION (FREE!)
+    // ============================================
+    
+    const EXCHANGE_CONFIG = {
+        exchange: 'bybit',  // 'bybit' or 'binance' 
+        
+        bybit: {
+            enabled: true,
+            symbol: 'BTCUSDT',
+            wsUrl: 'wss://stream.bybit.com/v5/public/linear',
+            displayName: 'Bybit'
+        },
+        
+        binance: {
+            enabled: false,
+            symbol: 'BTCUSDT',
+            wsUrl: 'wss://fstream.binance.com/stream',
+            displayName: 'Binance'
+        }
+    };
+
+    let exchangeSocket = null;
+    let isConnected = false;
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 10;
+    let candleInterval = 5 * 60 * 1000; // 5 minutes default
+    let candleStartTime = alignToTimeframe(Date.now(), candleInterval);
+    let lastDxFeedUpdate = 0;
+    const DXFEED_UPDATE_THROTTLE = 100;
+
+    // Align timestamp to timeframe boundaries
+    function alignToTimeframe(timestamp, interval) {
+        const date = new Date(timestamp);
+        
+        if (interval === 86400000) {
+            // Daily - align to midnight
+            date.setHours(0, 0, 0, 0);
+        } else if (interval === 3600000) {
+            // 1 hour - align to hour start
+            date.setMinutes(0, 0, 0);
+        } else {
+            // Minutes - align to interval boundaries
+            const minutes = date.getMinutes();
+            const intervalMinutes = interval / 60000;
+            const alignedMinutes = Math.floor(minutes / intervalMinutes) * intervalMinutes;
+            date.setMinutes(alignedMinutes, 0, 0);
+        }
+        
+        return date.getTime();
+    }
+
+    // Get timeframe display string
+    function getTimeframeString(interval) {
+        if (interval === 86400000) return 'Daily';
+        if (interval === 3600000) return '1h';
+        if (interval === 900000) return '15m';
+        if (interval === 300000) return '5m';
+        if (interval === 60000) return '1m';
+        return `${interval / 60000}m`;
+    }
+
+    function connectToExchange() {
+        const config = EXCHANGE_CONFIG[EXCHANGE_CONFIG.exchange];
+        
+        if (!config || !config.enabled) {
+            console.log('📊 Demo Mode - Enable exchange for live data');
+            updateConnectionStatus(false);
+            return;
+        }
+
+        console.log(`🔌 Connecting to ${config.displayName}...`);
+        
+        if (EXCHANGE_CONFIG.exchange === 'bybit') {
+            connectToBybit();
+        } else if (EXCHANGE_CONFIG.exchange === 'binance') {
+            connectToBinance();
+        }
+    }
+
+    function connectToBybit() {
+        const config = EXCHANGE_CONFIG.bybit;
+        console.log(`🔌 Connecting to Bybit at ${config.wsUrl}...`);
+        
+        try {
+            exchangeSocket = new WebSocket(config.wsUrl);
+        } catch (error) {
+            console.error('❌ Failed to create WebSocket:', error);
+            updateConnectionStatus(false);
+            return;
+        }
+        
+        exchangeSocket.onopen = () => {
+            console.log('✅ Connected to Bybit WebSocket');
+            isConnected = true;
+            reconnectAttempts = 0;
+            updateConnectionStatus(true);
+            
+            // Update symbol display
+            document.getElementById('symbol').textContent = `BTC/USDT - Bybit Live (${getTimeframeString(candleInterval)})`;
+            
+            // Subscribe to trades and orderbook
+            const subscribeMsg = {
+                op: 'subscribe',
+                args: [
+                    `publicTrade.${config.symbol}`,
+                    `orderbook.50.${config.symbol}`
+                ]
+            };
+            
+            console.log('📡 Sending subscription:', subscribeMsg);
+            exchangeSocket.send(JSON.stringify(subscribeMsg));
+        };
+        
+        exchangeSocket.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                
+                // Log subscription confirmation
+                if (data.success && data.op === 'subscribe') {
+                    console.log('✅ Subscription confirmed:', data.ret_msg);
+                    return;
+                }
+                
+                // Process data
+                if (data.topic && data.topic.includes('publicTrade')) {
+                    console.log('📊 Trade data received');
+                    processBybitTrade(data);
+                } else if (data.topic && data.topic.includes('orderbook')) {
+                    console.log('📖 Orderbook data received');
+                    processBybitOrderbook(data);
+                }
+            } catch (e) { 
+                console.error('❌ Bybit parse error:', e, event.data);
+            }
+        };
+        
+        exchangeSocket.onerror = (e) => {
+            console.error('❌ Bybit WebSocket error:', e);
+            isConnected = false;
+            updateConnectionStatus(false);
+        };
+        
+        exchangeSocket.onclose = (e) => {
+            console.log(`⚠️ Bybit WebSocket closed - Code: ${e.code}, Reason: ${e.reason || 'No reason'}, Clean: ${e.wasClean}`);
+            isConnected = false;
+            updateConnectionStatus(false);
+            document.getElementById('symbol').textContent = 'BTC/USDT - Reconnecting...';
+            
+            if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                reconnectAttempts++;
+                const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+                console.log(`🔄 Reconnect attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} in ${delay/1000}s...`);
+                setTimeout(connectToExchange, delay);
+            } else {
+                console.error('❌ Max reconnect attempts reached. Please refresh the page.');
+                document.getElementById('symbol').textContent = 'BTC/USDT - Connection Failed';
+            }
+        };
+    }
+
+    function connectToBinance() {
+        const config = EXCHANGE_CONFIG.binance;
+        const symbol = config.symbol.toLowerCase();
+        
+        // Binance uses combined streams
+        exchangeSocket = new WebSocket(`${config.wsUrl}?streams=${symbol}@aggTrade/${symbol}@depth20@100ms`);
+        
+        exchangeSocket.onopen = () => {
+            console.log('✅ Connected to Binance');
+            isConnected = true;
+            reconnectAttempts = 0;
+            updateConnectionStatus(true);
+        };
+        
+        exchangeSocket.onmessage = (event) => {
+            try {
+                const message = JSON.parse(event.data);
+                const data = message.data;
+                
+                if (message.stream && message.stream.includes('aggTrade')) {
+                    processBinanceTrade(data);
+                } else if (message.stream && message.stream.includes('depth')) {
+                    processBinanceDepth(data);
+                }
+            } catch (e) { 
+                console.error('Binance parse error:', e);
+            }
+        };
+        
+        exchangeSocket.onerror = (e) => {
+            console.error('❌ Binance error:', e);
+            isConnected = false;
+            updateConnectionStatus(false);
+        };
+        
+        exchangeSocket.onclose = (e) => {
+            console.log(`⚠️ Binance closed (code: ${e.code}) - reconnecting...`);
+            isConnected = false;
+            updateConnectionStatus(false);
+            
+            if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                reconnectAttempts++;
+                const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+                setTimeout(connectToExchange, delay);
+            } else {
+                console.error('Max reconnect attempts reached. Please refresh the page.');
+            }
+        };
+    }
+
+    function updateConnectionStatus(connected) {
+        let div = document.getElementById('dxfeedStatus');
+        if (!div) {
+            div = document.createElement('div');
+            div.id = 'dxfeedStatus';
+            div.style = 'position:fixed;top:60px;right:10px;padding:6px 10px;' +
+                        'background:#1a1a1a;border-radius:4px;font-size:11px;z-index:3000;' +
+                        'display:flex;align-items:center;gap:6px;border:1px solid;';
+            document.body.appendChild(div);
+        }
+        
+        const config = EXCHANGE_CONFIG[EXCHANGE_CONFIG.exchange];
+        const exchangeName = config ? config.displayName : 'Exchange';
+        
+        if (config && config.enabled) {
+            div.innerHTML = connected 
+                ? `<span style="color:#10b981">🟢</span><span style="color:#6b7280">${exchangeName} Live</span>`
+                : `<span style="color:#ef4444">🔴</span><span style="color:#6b7280">Reconnecting...</span>`;
+            div.style.borderColor = connected ? '#10b981' : '#ef4444';
+        } else {
+            div.innerHTML = '<span style="color:#f59e0b">⚪</span><span style="color:#6b7280">Demo</span>';
+            div.style.borderColor = '#f59e0b';
+        }
+    }
+
+    function processBybitTrade(message) {
+        if (!message.data || message.data.length === 0) {
+            console.log('⚠️ No trade data in message');
+            return;
+        }
+        
+        console.log(`📊 Processing ${message.data.length} trades`);
+        
+        message.data.forEach(trade => {
+            // trade.p = price, trade.v = quantity, trade.S = side (Buy/Sell)
+            const price = parseFloat(trade.p);
+            const qty = parseFloat(trade.v);
+            const isSell = trade.S === 'Sell';
+            
+            console.log(`Trade: ${trade.S} ${qty} @ $${price}`);
+            
+            if (!currentCandle) {
+                console.log(`Creating new candle at $${price}`);
+                currentCandle = createNewCandle(price);
+            }
+            
+            // Update OHLC
+            currentCandle.h = Math.max(currentCandle.h, price);
+            currentCandle.l = Math.min(currentCandle.l, price);
+            currentCandle.c = price;
+            currentCandle.v += qty;
+            currentCandle.t = trade.T || Date.now();
+            
+            // Update footprint
+            const priceKey = price.toFixed(CONFIG.tickSize === 0.50 ? 2 : 0);
+            if (!currentCandle.fp[priceKey]) currentCandle.fp[priceKey] = { b: 0, a: 0 };
+            
+            if (isSell) {
+                currentCandle.fp[priceKey].b += qty;
+            } else {
+                currentCandle.fp[priceKey].a += qty;
+            }
+            
+            draw();
+            updateStatsTable();
+        });
+    }
+
+    function processBybitOrderbook(message) {
+        if (!message.data || !message.data.b || !message.data.a) return;
+        
+        const data = message.data;
+        
+        if (!currentCandle) {
+            const bestBid = parseFloat(data.b[0][0]);
+            const bestAsk = parseFloat(data.a[0][0]);
+            const midPrice = (bestBid + bestAsk) / 2;
+            currentCandle = createNewCandle(midPrice);
+        }
+        
+        // Update footprint with orderbook (light touch - just top levels)
+        data.b.slice(0, 5).forEach(([price, qty]) => {
+            const p = parseFloat(price);
+            const priceKey = p.toFixed(CONFIG.tickSize === 0.50 ? 2 : 0);
+            if (!currentCandle.fp[priceKey]) {
+                currentCandle.fp[priceKey] = { b: 0, a: 0 };
+            }
+            currentCandle.fp[priceKey].b = Math.max(currentCandle.fp[priceKey].b, parseFloat(qty) / 20);
+        });
+        
+        data.a.slice(0, 5).forEach(([price, qty]) => {
+            const p = parseFloat(price);
+            const priceKey = p.toFixed(CONFIG.tickSize === 0.50 ? 2 : 0);
+            if (!currentCandle.fp[priceKey]) {
+                currentCandle.fp[priceKey] = { b: 0, a: 0 };
+            }
+            currentCandle.fp[priceKey].a = Math.max(currentCandle.fp[priceKey].a, parseFloat(qty) / 20);
+        });
+    }
+
+    function processBinanceTrade(trade) {
+        // trade.p = price, trade.q = quantity, trade.m = is buyer maker
+        const price = parseFloat(trade.p);
+        const qty = parseFloat(trade.q);
+        const isBuyerMaker = trade.m; // true = sell aggressor, false = buy aggressor
+        
+        if (!currentCandle) currentCandle = createNewCandle(price);
+        
+        // Update OHLC
+        currentCandle.h = Math.max(currentCandle.h, price);
+        currentCandle.l = Math.min(currentCandle.l, price);
+        currentCandle.c = price;
+        currentCandle.v += qty;
+        currentCandle.t = trade.T || Date.now();
+        
+        // Update footprint with actual trade
+        const priceKey = price.toFixed(CONFIG.tickSize === 0.50 ? 2 : 0);
+        if (!currentCandle.fp[priceKey]) currentCandle.fp[priceKey] = { b: 0, a: 0 };
+        
+        if (isBuyerMaker) {
+            // Sell aggressor (market sell hit bid)
+            currentCandle.fp[priceKey].b += qty;
+        } else {
+            // Buy aggressor (market buy lifted ask)
+            currentCandle.fp[priceKey].a += qty;
+        }
+        
+        draw();
+        updateStatsTable();
+    }
+
+    function processBinanceDepth(data) {
+        if (!data.bids || !data.asks) return;
+        
+        if (!currentCandle) {
+            const bestBid = parseFloat(data.bids[0][0]);
+            const bestAsk = parseFloat(data.asks[0][0]);
+            const midPrice = (bestBid + bestAsk) / 2;
+            currentCandle = createNewCandle(midPrice);
+        }
+        
+        // Update footprint with orderbook levels
+        data.bids.slice(0, 10).forEach(([price, qty]) => {
+            const p = parseFloat(price);
+            const priceKey = p.toFixed(CONFIG.tickSize === 0.50 ? 2 : 0);
+            if (!currentCandle.fp[priceKey]) {
+                currentCandle.fp[priceKey] = { b: 0, a: 0 };
+            }
+            // Show relative depth, not absolute quantities
+            currentCandle.fp[priceKey].b = Math.max(currentCandle.fp[priceKey].b, parseFloat(qty) / 10);
+        });
+        
+        data.asks.slice(0, 10).forEach(([price, qty]) => {
+            const p = parseFloat(price);
+            const priceKey = p.toFixed(CONFIG.tickSize === 0.50 ? 2 : 0);
+            if (!currentCandle.fp[priceKey]) {
+                currentCandle.fp[priceKey] = { b: 0, a: 0 };
+            }
+            currentCandle.fp[priceKey].a = Math.max(currentCandle.fp[priceKey].a, parseFloat(qty) / 10);
+        });
+        
+        draw();
+    }
+
+    function createNewCandle(price) {
+        const alignedTime = alignToTimeframe(Date.now(), candleInterval);
+        return { 
+            t: alignedTime, 
+            o: price, 
+            h: price, 
+            l: price, 
+            c: price, 
+            v: 0, 
+            fp: {} 
+        };
+    }
+
+    function checkCandleInterval() {
+        const now = Date.now();
+        const currentAlignedTime = alignToTimeframe(now, candleInterval);
+        
+        // Check if we've moved to a new timeframe period
+        if (currentAlignedTime > candleStartTime) {
+            // Close current candle and start new one
+            if (currentCandle && isConnected) {
+                candles.push(currentCandle);
+                if (candles.length > 200) {
+                    candles.shift(); // Keep only last 200 candles
+                }
+            }
+            
+            // Start new candle at the aligned time
+            currentCandle = null;
+            candleStartTime = currentAlignedTime;
+            
+            draw();
+            updateStatsTable();
+            
+            console.log(`📊 New ${getTimeframeString(candleInterval)} candle started at ${new Date(currentAlignedTime).toLocaleTimeString()}`);
+        }
+    }
+    setInterval(checkCandleInterval, 1000);
+
+    // Generate sample data with proper timeframe alignment
+    function generateSampleData(numCandles = 50) {
+        candles = [];
+        let price = CONFIG.startPrice;
+        const now = Date.now();
+        
+        for (let i = numCandles - 1; i >= 0; i--) {
+            const candleTime = alignToTimeframe(now - (i * candleInterval), candleInterval);
+            
+            // Random price movement
+            const change = (Math.random() - 0.5) * 5;
+            const open = price;
+            const close = price + change;
+            const high = Math.max(open, close) + Math.random() * 2;
+            const low = Math.min(open, close) - Math.random() * 2;
+            
+            // Generate footprint data
+            const fp = {};
+            let currentPrice = low;
+            while (currentPrice <= high) {
+                const key = currentPrice.toFixed(2);
+                const totalVol = Math.floor(Math.random() * 500) + 100;
+                const bidRatio = Math.random();
+                fp[key] = {
+                    b: Math.floor(totalVol * bidRatio),
+                    a: Math.floor(totalVol * (1 - bidRatio))
+                };
+                currentPrice += CONFIG.tickSize;
+            }
+            
+            candles.push({
+                t: candleTime,
+                o: open,
+                h: high,
+                l: low,
+                c: close,
+                v: Math.floor(Math.random() * 10000) + 5000,
+                fp: fp
+            });
+            
+            price = close;
+        }
+    }
+
+    // Timeframe selector
+    document.getElementById('timeframeSelect').addEventListener('change', (e) => {
+        candleInterval = parseInt(e.target.value);
+        candleStartTime = alignToTimeframe(Date.now(), candleInterval);
+        currentCandle = null;
+        
+        console.log(`📊 Timeframe changed to ${getTimeframeString(candleInterval)}`);
+        
+        // Regenerate sample data for new timeframe
+        if (!isConnectedToDxFeed) {
+            generateSampleData(50);
+            draw();
+            updateStatsTable();
+        }
+    });
+
+    // Initialize with sample data only if exchange is disabled
+    const config = EXCHANGE_CONFIG[EXCHANGE_CONFIG.exchange];
+    if (!config || !config.enabled) {
+        console.log('📊 Generating sample data (exchange disabled)');
+        generateSampleData(50);
+    } else {
+        console.log('📊 Waiting for live data from exchange...');
+    }
+
+    // Canvas
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        const container = document.getElementById('chartContainer');
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = container.clientWidth * dpr;
+        canvas.height = container.clientHeight * dpr;
+        canvas.style.width = container.clientWidth + 'px';
+        canvas.style.height = container.clientHeight + 'px';
+        ctx.scale(dpr, dpr);
+        draw();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Initialize
+    function startDemo() {
+        document.getElementById('startModal').classList.add('hidden');
+        initCandle();
+        setInterval(generateTick, 400);
+        for (let i = 0; i < 15; i++) generateTick();
+        
+        // Force close a few candles to populate the table initially
+        for (let i = 0; i < 5; i++) {
+            const basePrice = CONFIG.startPrice + (Math.random() - 0.5) * 10;
+            candles.push({
+                t: Date.now() - ((5 - i) * 300000), // Stagger times
+                o: basePrice,
+                h: basePrice + 2.5,
+                l: basePrice - 2.5,
+                c: basePrice + (Math.random() - 0.5) * 2,
+                v: Math.floor(Math.random() * 5000) + 1000,
+                bv: Math.floor(Math.random() * 3000) + 500,
+                av: Math.floor(Math.random() * 3000) + 500,
+                fp: {}
+            });
+        }
+        
+        draw();
+        updateStatsTable();
+    }
+
+    function initCandle() {
+        currentCandle = {
+            t: Date.now(),
+            o: CONFIG.startPrice,
+            h: CONFIG.startPrice,
+            l: CONFIG.startPrice,
+            c: CONFIG.startPrice,
+            v: 0,
+            bv: 0,
+            av: 0,
+            fp: {}
+        };
+    }
+
+    function generateTick() {
+        if (!currentCandle) return;
+
+        const move = (Math.random() - 0.5) * 1.0; // ES moves in smaller increments
+        let price = currentCandle.c + move;
+        price = Math.round(price * 4) / 4; // Round to 0.25 (ES tick size)
+
+        const size = Math.floor(Math.random() * 100) + 10;
+        const isBid = move > 0 || (move === 0 && Math.random() > 0.5);
+        
+        currentCandle.c = price;
+        currentCandle.h = Math.max(currentCandle.h, price);
+        currentCandle.l = Math.min(currentCandle.l, price);
+
+        const key = price.toFixed(2); // Store with 2 decimals for accuracy
+        if (!currentCandle.fp[key]) {
+            currentCandle.fp[key] = { b: 0, a: 0 };
+        }
+
+        if (isBid) {
+            currentCandle.fp[key].b += size;
+            currentCandle.bv += size;
+        } else {
+            currentCandle.fp[key].a += size;
+            currentCandle.av += size;
+        }
+
+        currentCandle.v += size;
+
+        // Update volume profile (total volume at each price across all time)
+        if (!volumeProfile[key]) {
+            volumeProfile[key] = 0;
+        }
+        volumeProfile[key] += size;
+
+        const elapsed = Date.now() - currentCandle.t;
+        if (elapsed > 300000) { // 5 min
+            candles.push(currentCandle);
+            if (candles.length > 20) candles.shift();
+            initCandle();
+            updateStatsTable(); // Update table when candle closes
+        }
+
+        draw();
+    }
+
+    function draw() {
+        const w = canvas.width / (window.devicePixelRatio || 1);
+        const h = canvas.height / (window.devicePixelRatio || 1);
+
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, w, h);
+
+        const allCandles = [...candles];
+        if (currentCandle) allCandles.push(currentCandle);
+        if (allCandles.length === 0) return;
+
+        // Calculate price range
+        let minPrice = Infinity, maxPrice = -Infinity;
+        allCandles.forEach(c => {
+            minPrice = Math.min(minPrice, c.l);
+            maxPrice = Math.max(maxPrice, c.h);
+        });
+
+        const padding = (maxPrice - minPrice) * 0.15;
+        minPrice -= padding;
+        maxPrice += padding;
+
+        // Apply vertical offset (move chart up/down)
+        const range = maxPrice - minPrice;
+        const verticalShift = (verticalOffset / h) * range;
+        minPrice += verticalShift;
+        maxPrice += verticalShift;
+
+        // Calculate volume profile for visible candles
+        if (CONFIG.showVolumeProfile) {
+            calculateVolumeProfile(allCandles);
+            drawVolumeProfile(w, h, minPrice, maxPrice);
+        }
+
+        // Price scale (returns adjusted range with zoom)
+        const priceRange = drawPriceScale(w, h, minPrice, maxPrice);
+        minPrice = priceRange.minPrice;
+        maxPrice = priceRange.maxPrice;
+
+        // Draw candles
+        const candleW = CONFIG.candleWidth * zoomLevel;
+        const gap = CONFIG.candleGap * zoomLevel;
+        const totalWidth = allCandles.length * (candleW + gap);
+        const leftMargin = CONFIG.showVolumeProfile ? 20 + CONFIG.volumeProfileWidth + 30 : 20;
+        const rightMargin = 100; // Extra space to see developing candles
+        const chartWidth = w - 80 - rightMargin; // Space for candles (exclude price scale + margin)
+        
+        // Allow free scrolling - don't clamp to leftMargin
+        const startX = chartWidth - totalWidth + scrollOffset;
+
+        allCandles.forEach((candle, i) => {
+            const x = startX + i * (candleW + gap);
+            // Don't draw if off-screen or overlapping price scale
+            if (x + candleW < 0 || x > w - 80) return;
+            drawCandle(candle, x, candleW, h, minPrice, maxPrice, i === allCandles.length - 1);
+        });
+
+        // Draw lines
+        lines.forEach((line, idx) => {
+            const y = priceToY(line.price, h, minPrice, maxPrice);
+            ctx.strokeStyle = line.color || '#fbbf24';
+            ctx.lineWidth = line.width || 2;
+            
+            if (line.style === 'dashed') {
+                ctx.setLineDash([5, 5]);
+            } else {
+                ctx.setLineDash([]);
+            }
+            
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(w - 80, y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = line.color || '#fbbf24';
+            ctx.font = 'bold 10px monospace';
+            ctx.fillText(line.price.toFixed(2), w - 72, y - 3);
+        });
+
+        // Draw fibonacci retracements
+        fibs.forEach((fib, idx) => {
+            const allLevels = [
+                { ratio: 0, label: '0.0', key: 'fib0' },
+                { ratio: 0.236, label: '0.236', key: 'fib236' },
+                { ratio: 0.382, label: '0.382', key: 'fib382' },
+                { ratio: 0.5, label: '0.5', key: 'fib50' },
+                { ratio: 0.618, label: '0.618', key: 'fib618' },
+                { ratio: 0.66, label: '0.66', key: 'fib66' },
+                { ratio: 0.786, label: '0.786', key: 'fib786' },
+                { ratio: 1, label: '1.0', key: 'fib100' }
+            ];
+
+            const range = Math.abs(fib.endPrice - fib.startPrice);
+            const isUp = fib.endPrice > fib.startPrice;
+            
+            // Calculate fib X positions based on candle indices
+            const candleW = CONFIG.candleWidth * zoomLevel;
+            const gap = CONFIG.candleGap * zoomLevel;
+            const totalWidth = allCandles.length * (candleW + gap);
+            const leftMargin = CONFIG.showVolumeProfile ? 20 + CONFIG.volumeProfileWidth + 30 : 20;
+            const rightMargin = 100;
+            const chartWidth = w - 80 - rightMargin;
+            
+            // Allow free scrolling
+            const startX = chartWidth - totalWidth + scrollOffset;
+            
+            // Fib positions move with candles
+            const fibStartX = startX + (fib.startCandleIndex * (candleW + gap));
+            const fibEndX = startX + (fib.endCandleIndex * (candleW + gap));
+            const fibMinX = Math.min(fibStartX, fibEndX);
+            const fibMaxX = Math.max(fibStartX, fibEndX);
+
+            allLevels.forEach(level => {
+                // Check if level is enabled
+                if (fib.levels && !fib.levels[level.key]) return;
+
+                const price = isUp 
+                    ? fib.startPrice + (range * level.ratio)
+                    : fib.startPrice - (range * level.ratio);
+                
+                const y = priceToY(price, h, minPrice, maxPrice);
+
+                // Use individual level color if set, otherwise use fib color
+                const levelColor = (fib.levelColors && fib.levelColors[level.key]) || fib.color || '#3b82f6';
+                
+                ctx.strokeStyle = levelColor;
+                ctx.lineWidth = level.ratio === 0.5 || level.ratio === 0.618 ? 2 : 1;
+                
+                if (fib.style === 'dashed') {
+                    ctx.setLineDash([3, 3]);
+                } else {
+                    ctx.setLineDash([]);
+                }
+                
+                // Draw line only between start and end X positions
+                ctx.beginPath();
+                ctx.moveTo(Math.max(0, fibMinX), y);
+                ctx.lineTo(Math.min(w - 80, fibMaxX), y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Label on right side of the fib (not at edge of chart)
+                const labelX = Math.min(fibMaxX + 5, w - 80);
+                if (labelX < w - 85) { // Only show if there's room
+                    ctx.fillStyle = levelColor;
+                    ctx.font = 'bold 9px monospace';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(`${level.label}`, labelX, y - 2);
+                    ctx.fillText(`${price.toFixed(2)}`, labelX, y + 9);
+                    ctx.textAlign = 'left';
+                }
+            });
+        });
+
+        // Draw temporary fib while drawing
+        if (fibDrawing && fibDrawing.startPrice !== null && fibStartPoint) {
+            const y1 = priceToY(fibDrawing.startPrice, h, minPrice, maxPrice);
+            const startXPos = fibStartPoint.x + scrollOffset;
+            
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(Math.max(0, startXPos), y1);
+            ctx.lineTo(Math.min(w - 80, startXPos + 100), y1); // Show preview extending 100px
+            ctx.stroke();
+            
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = '11px monospace';
+            ctx.fillText('Drag to end point...', startXPos + 5, y1 - 5);
+        }
+
+        // Sync volume table with candle positions
+        syncStatsTableWithCandles();
+    }
+
+    function calculateVolumeProfile(candles) {
+        volumeProfileData = {};
+        
+        if (candles.length === 0) return;
+        
+        // Get current session based on latest candle time
+        const latestTime = candles[candles.length - 1].t;
+        const latestDate = new Date(latestTime);
+        
+        // Session runs from 3:00 PM (15:00) to next day 1:59 PM (13:59) EST
+        // Determine which session we're in
+        let sessionStart, sessionEnd;
+        const hour = latestDate.getHours();
+        
+        if (hour >= 15) {
+            // After 3pm - session started today at 3pm
+            sessionStart = new Date(latestDate);
+            sessionStart.setHours(15, 0, 0, 0);
+            sessionEnd = new Date(latestDate);
+            sessionEnd.setDate(sessionEnd.getDate() + 1);
+            sessionEnd.setHours(13, 59, 59, 999);
+        } else if (hour < 14) {
+            // Before 2pm - session started yesterday at 3pm
+            sessionStart = new Date(latestDate);
+            sessionStart.setDate(sessionStart.getDate() - 1);
+            sessionStart.setHours(15, 0, 0, 0);
+            sessionEnd = new Date(latestDate);
+            sessionEnd.setHours(13, 59, 59, 999);
+        } else {
+            // Between 2pm and 3pm - use yesterday's session
+            sessionStart = new Date(latestDate);
+            sessionStart.setDate(sessionStart.getDate() - 1);
+            sessionStart.setHours(15, 0, 0, 0);
+            sessionEnd = new Date(latestDate);
+            sessionEnd.setHours(13, 59, 59, 999);
+        }
+        
+        // Filter candles for current session only
+        const sessionCandles = candles.filter(c => {
+            return c.t >= sessionStart.getTime() && c.t <= sessionEnd.getTime();
+        });
+        
+        // Aggregate volume at each price level from session candles
+        sessionCandles.forEach(candle => {
+            Object.keys(candle.fp).forEach(priceKey => {
+                const fp = candle.fp[priceKey];
+                if (!volumeProfileData[priceKey]) {
+                    volumeProfileData[priceKey] = 0;
+                }
+                volumeProfileData[priceKey] += (fp.b || 0) + (fp.a || 0);
+            });
+        });
+    }
+
+    function drawVolumeProfile(w, h, minPrice, maxPrice) {
+        if (!CONFIG.showVolumeProfile || Object.keys(volumeProfileData).length === 0) return;
+        
+        // Find max volume for scaling
+        let maxVolume = 0;
+        Object.values(volumeProfileData).forEach(vol => {
+            if (vol > maxVolume) maxVolume = vol;
+        });
+        
+        if (maxVolume === 0) return;
+        
+        // Calculate POC (Point of Control) - price with highest volume
+        let pocPrice = null;
+        let pocVolume = 0;
+        Object.entries(volumeProfileData).forEach(([price, vol]) => {
+            if (vol > pocVolume) {
+                pocVolume = vol;
+                pocPrice = parseFloat(price);
+            }
+        });
+        
+        // Calculate total volume and find VA (Value Area) - 70% of volume
+        const totalVolume = Object.values(volumeProfileData).reduce((sum, vol) => sum + vol, 0);
+        const targetVA = totalVolume * 0.7;
+        
+        // Sort prices by volume
+        const sortedByVolume = Object.entries(volumeProfileData)
+            .sort((a, b) => b[1] - a[1]);
+        
+        // Build value area starting from POC
+        let vaVolume = 0;
+        let vaPrices = [];
+        for (const [price, vol] of sortedByVolume) {
+            vaPrices.push(parseFloat(price));
+            vaVolume += vol;
+            if (vaVolume >= targetVA) break;
+        }
+        
+        const VAL = Math.min(...vaPrices); // Value Area Low
+        const VAH = Math.max(...vaPrices); // Value Area High
+        
+        // Draw volume profile bars on LEFT side
+        const profileStartX = 20;
+        const profileMaxWidth = CONFIG.volumeProfileWidth;
+        
+        Object.entries(volumeProfileData).forEach(([price, vol]) => {
+            const p = parseFloat(price);
+            const y = priceToY(p, h, minPrice, maxPrice);
+            const barWidth = (vol / maxVolume) * profileMaxWidth;
+            
+            // Determine color based on VA
+            let barColor = 'rgba(100, 100, 100, 0.3)'; // Outside VA
+            if (p >= VAL && p <= VAH) {
+                barColor = 'rgba(59, 130, 246, 0.4)'; // Inside VA
+            }
+            if (p === pocPrice) {
+                barColor = 'rgba(239, 68, 68, 0.6)'; // POC
+            }
+            
+            ctx.fillStyle = barColor;
+            ctx.fillRect(profileStartX, y - 2, barWidth, 4);
+        });
+        
+        // Draw POC line
+        if (pocPrice) {
+            const pocY = priceToY(pocPrice, h, minPrice, maxPrice);
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.moveTo(profileStartX, pocY);
+            ctx.lineTo(profileStartX + profileMaxWidth + 10, pocY);
+            ctx.stroke();
+            
+            // POC Label
+            ctx.fillStyle = '#ef4444';
+            ctx.font = 'bold 10px monospace';
+            ctx.fillText('POC', profileStartX + profileMaxWidth + 15, pocY + 4);
+        }
+        
+        // Draw VAH line
+        const vahY = priceToY(VAH, h, minPrice, maxPrice);
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(profileStartX, vahY);
+        ctx.lineTo(profileStartX + profileMaxWidth + 10, vahY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // VAH Label
+        ctx.fillStyle = '#3b82f6';
+        ctx.font = 'bold 9px monospace';
+        ctx.fillText('VAH', profileStartX + profileMaxWidth + 15, vahY - 2);
+        
+        // Draw VAL line
+        const valY = priceToY(VAL, h, minPrice, maxPrice);
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(profileStartX, valY);
+        ctx.lineTo(profileStartX + profileMaxWidth + 10, valY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // VAL Label
+        ctx.fillStyle = '#3b82f6';
+        ctx.font = 'bold 9px monospace';
+        ctx.fillText('VAL', profileStartX + profileMaxWidth + 15, valY + 10);
+    }
+
+    function drawPriceScale(w, h, minPrice, maxPrice) {
+        // Apply price scale zoom
+        const center = (minPrice + maxPrice) / 2;
+        const range = (maxPrice - minPrice) / priceScaleZoom;
+        minPrice = center - range / 2;
+        maxPrice = center + range / 2;
+
+        // Calculate step based on zoom level for proper spacing
+        let step = CONFIG.tickSize;
+        if (priceScaleZoom < 0.5) {
+            step = CONFIG.tickSize * 4; // Show every 1.0 when zoomed out
+        } else if (priceScaleZoom < 1) {
+            step = CONFIG.tickSize * 2; // Show every 0.50
+        }
+        // else show every 0.25 when zoomed in
+
+        ctx.font = '10px monospace';
+        ctx.fillStyle = '#6b7280';
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.lineWidth = 1;
+
+        // Draw price scale background
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(w - 80, 0, 80, h);
+
+        ctx.fillStyle = '#6b7280';
+        
+        // Draw grid lines and price labels
+        for (let p = Math.ceil(minPrice / step) * step; p <= maxPrice; p += step) {
+            const y = priceToY(p, h, minPrice, maxPrice);
+            
+            // Grid line
+            ctx.strokeStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(w - 80, y);
+            ctx.stroke();
+
+            // Price label
+            ctx.fillStyle = '#6b7280';
+            ctx.font = '10px monospace';
+            ctx.fillText(p.toFixed(2), w - 72, y + 3);
+        }
+
+        return { minPrice, maxPrice }; // Return adjusted range
+    }
+
+    function drawCandle(c, x, w, h, minPrice, maxPrice, isCurrent) {
+        const oy = priceToY(c.o, h, minPrice, maxPrice);
+        const cy = priceToY(c.c, h, minPrice, maxPrice);
+        const hy = priceToY(c.h, h, minPrice, maxPrice);
+        const ly = priceToY(c.l, h, minPrice, maxPrice);
+
+        const isGreen = c.c >= c.o;
+        const bodyColor = isGreen ? '#10b981' : '#ef4444';
+        const borderColor = isCurrent ? '#fbbf24' : (isGreen ? '#059669' : '#dc2626');
+
+        // Wick
+        ctx.strokeStyle = bodyColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x + w/2, hy);
+        ctx.lineTo(x + w/2, ly);
+        ctx.stroke();
+
+        // Body
+        const top = Math.min(oy, cy);
+        const bodyH = Math.abs(cy - oy) || 2;
+
+        ctx.fillStyle = isGreen ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)';
+        ctx.fillRect(x, top, w, bodyH);
+
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = isCurrent ? 3 : 2;
+        ctx.strokeRect(x, top, w, bodyH);
+
+        // Draw footprint INSIDE candle
+        if (w > 80) {
+            drawFootprintInside(c, x, w, h, minPrice, maxPrice);
+        }
+    }
+
+    function drawFootprintInside(candle, x, w, h, minPrice, maxPrice) {
+        if (!candle.fp) return; // Safety check
+        
+        const prices = Object.keys(candle.fp).map(p => parseFloat(p)).sort((a, b) => b - a);
+        
+        ctx.font = '9px monospace';
+        
+        prices.forEach(price => {
+            const key = price.toFixed(2);
+            const fp = candle.fp[key];
+            if (!fp) return; // Safety check
+            
+            const y = priceToY(price, h, minPrice, maxPrice);
+
+            // Check if price is within candle range
+            if (price < candle.l || price > candle.h) return;
+
+            // Safety checks for bid and ask values
+            const bidVol = fp.b || 0;
+            const askVol = fp.a || 0;
+            
+            if (bidVol === 0 && askVol === 0) return;
+
+            // Calculate imbalance
+            const total = bidVol + askVol;
+            if (total === 0) return;
+            
+            const ratio = bidVol / Math.max(askVol, 0.01); // Prevent division by zero
+            const isImbalance = ratio > CONFIG.imbalanceThreshold || ratio < (1/CONFIG.imbalanceThreshold);
+
+            // Bid (left side)
+            if (bidVol > 0) {
+                const bidColor = isImbalance && bidVol > askVol ? '#10b981' : '#34d399';
+                const bgColor = isImbalance && bidVol > askVol ? 'rgba(16, 185, 129, 0.3)' : 'transparent';
+                
+                if (bgColor !== 'transparent') {
+                    ctx.fillStyle = bgColor;
+                    ctx.fillRect(x + 4, y - 6, w/2 - 6, 12);
+                }
+                
+                ctx.fillStyle = bidColor;
+                ctx.textAlign = 'left';
+                ctx.font = isImbalance && bidVol > askVol ? 'bold 9px monospace' : '9px monospace';
+                ctx.fillText(bidVol.toFixed(0), x + 6, y + 3);
+            }
+
+            // Ask (right side)
+            if (askVol > 0) {
+                const askColor = isImbalance && askVol > bidVol ? '#ef4444' : '#f87171';
+                const bgColor = isImbalance && askVol > bidVol ? 'rgba(239, 68, 68, 0.3)' : 'transparent';
+                
+                if (bgColor !== 'transparent') {
+                    ctx.fillStyle = bgColor;
+                    ctx.fillRect(x + w/2 + 2, y - 6, w/2 - 6, 12);
+                }
+                
+                ctx.fillStyle = askColor;
+                ctx.textAlign = 'right';
+                ctx.font = isImbalance && askVol > bidVol ? 'bold 9px monospace' : '9px monospace';
+                ctx.fillText(askVol.toFixed(0), x + w - 6, y + 3);
+            }
+        });
+
+        ctx.textAlign = 'left';
+    }
+
+    function priceToY(price, h, minPrice, maxPrice) {
+        const range = maxPrice - minPrice;
+        return h - ((price - minPrice) / range * h);
+    }
+
+    function yToPrice(y, h, minPrice, maxPrice) {
+        const range = maxPrice - minPrice;
+        return maxPrice - ((y / h) * range);
+    }
+
+    function updateStatsTable() {
+        const container = document.querySelector('.stats-canvas-overlay');
+        if (!container) return;
+        
+        const allCandles = [...candles];
+        if (currentCandle && currentCandle.v > 0) allCandles.push(currentCandle);
+
+        if (allCandles.length === 0) return;
+        
+        // Calculate CVD for ALL candles
+        let runningCVD = 0;
+        const candleData = allCandles.map(c => {
+            const delta = c.bv - c.av;
+            runningCVD += delta;
+            return {
+                volume: c.v,
+                delta: delta,
+                cvd: runningCVD
+            };
+        });
+
+        // Store data for positioning
+        container.dataset.candleData = JSON.stringify(candleData);
+    }
+
+    function syncStatsTableWithCandles() {
+        const container = document.querySelector('.stats-canvas-overlay');
+        if (!container) return;
+        
+        const candleData = container.dataset.candleData ? JSON.parse(container.dataset.candleData) : [];
+        if (candleData.length === 0) return;
+        
+        const w = canvas.width / (window.devicePixelRatio || 1);
+        const allCandles = [...candles];
+        if (currentCandle) allCandles.push(currentCandle);
+        
+        const candleW = CONFIG.candleWidth * zoomLevel;
+        const gap = CONFIG.candleGap * zoomLevel;
+        const totalWidth = allCandles.length * (candleW + gap);
+        const leftMargin = CONFIG.showVolumeProfile ? 20 + CONFIG.volumeProfileWidth + 30 : 20;
+        const rightMargin = 100; // Match candle drawing
+        const chartWidth = w - 80 - rightMargin;
+        
+        // Allow free scrolling
+        const startX = chartWidth - totalWidth + scrollOffset;
+        
+        // Build HTML with exact positioning (subtract leftMargin since table starts after labels)
+        let html = '';
+        
+        allCandles.forEach((candle, index) => {
+            const canvasX = startX + (index * (candleW + gap));
+            const tableX = canvasX - 80; // Offset by label width
+            const data = candleData[index];
+            
+            if (!data) return;
+            
+            // Only render columns that are visible on screen
+            if (canvasX + candleW < -20 || canvasX > w - 80) return;
+            
+            html += `<div class="candle-column" style="position: absolute; left: ${tableX}px; width: ${candleW}px;">`;
+            
+            // Volume
+            const volStr = data.volume >= 1000000 
+                ? (data.volume / 1000000).toFixed(0) + 'M' 
+                : data.volume >= 1000 
+                ? (data.volume / 1000).toFixed(0) + 'K'
+                : data.volume.toFixed(0);
+            html += `<div class="stat-cell volume-cell">${volStr}</div>`;
+            
+            // Delta
+            const deltaStr = data.delta >= 1000000 
+                ? (data.delta >= 0 ? '+' : '') + (data.delta / 1000000).toFixed(1) + 'M'
+                : data.delta >= 1000
+                ? (data.delta >= 0 ? '+' : '') + (data.delta / 1000).toFixed(1) + 'K'
+                : (data.delta >= 0 ? '+' : '') + data.delta.toFixed(0);
+            const deltaClass = data.delta >= 0 ? 'positive' : 'negative';
+            html += `<div class="stat-cell delta-cell ${deltaClass}">${deltaStr}</div>`;
+            
+            // CVD
+            const cvdStr = data.cvd >= 1000000
+                ? (data.cvd >= 0 ? '+' : '') + (data.cvd / 1000000).toFixed(0) + 'M'
+                : data.cvd >= 1000
+                ? (data.cvd >= 0 ? '+' : '') + (data.cvd / 1000).toFixed(0) + 'K'
+                : (data.cvd >= 0 ? '+' : '') + data.cvd.toFixed(0);
+            const cvdClass = data.cvd >= 0 ? 'positive' : 'negative';
+            html += `<div class="stat-cell cvd-cell ${cvdClass}">${cvdStr}</div>`;
+            
+            html += '</div>';
+        });
+        
+        container.innerHTML = html;
+    }
+
+    // dxFeed Settings Modal
+    function toggleDxFeedSettings() {
+        const modal = document.getElementById('dxfeedSettingsModal');
+        modal.style.display = modal.style.display === 'none' ? 'flex' : 'none';
+        
+        // Load current settings
+        document.getElementById('dxfeedEnabledCheckbox').checked = DXFEED_CONFIG.enabled;
+        document.getElementById('dxfeedTokenInput').value = DXFEED_CONFIG.token === 'YOUR_DXFEED_API_TOKEN_HERE' ? '' : DXFEED_CONFIG.token;
+        document.getElementById('dxfeedSymbolSelect').value = DXFEED_CONFIG.symbol;
+    }
+
+    function saveDxFeedSettings() {
+        const enabled = document.getElementById('dxfeedEnabledCheckbox').checked;
+        const token = document.getElementById('dxfeedTokenInput').value.trim();
+        const symbol = document.getElementById('dxfeedSymbolSelect').value;
+
+        // Update config
+        DXFEED_CONFIG.enabled = enabled;
+        DXFEED_CONFIG.token = token || 'YOUR_DXFEED_API_TOKEN_HERE';
+        DXFEED_CONFIG.symbol = symbol;
+
+        // Update symbol display
+        document.getElementById('symbol').textContent = enabled && token ? `ES ${symbol}` : 'ES /ES - Demo Mode';
+
+        // Close existing connection if any
+        if (dxfeedSocket) {
+            dxfeedSocket.close();
+        }
+
+        // Reconnect with new settings
+        if (enabled && token) {
+            console.log('🔄 Reconnecting with new settings...');
+            candles = []; // Clear old data
+            currentCandle = null;
+            candleStartTime = alignToTimeframe(Date.now(), candleInterval);
+            connectToDxFeed();
+        } else {
+            updateConnectionStatus(false);
+            // Regenerate demo data
+            generateSampleData(50);
+            draw();
+            updateStatsTable();
+        }
+
+        closeDxFeedSettings();
+    }
+
+    function closeDxFeedSettings() {
+        document.getElementById('dxfeedSettingsModal').style.display = 'none';
+    }
+
+    // Toggle Volume Profile
+    function toggleVolumeProfile() {
+        CONFIG.showVolumeProfile = !CONFIG.showVolumeProfile;
+        const btn = document.getElementById('volumeProfileBtn');
+        btn.classList.toggle('active', CONFIG.showVolumeProfile);
+        draw();
+    }
+
+    // Quick Fib Settings
+    let currentQuickFib = null;
+    let currentQuickFibIndex = null;
+
+    function showQuickFibSettings(fib, index, x, y) {
+        currentQuickFib = fib;
+        currentQuickFibIndex = index;
+        
+        const popup = document.getElementById('quickFibSettings');
+        popup.style.display = 'block';
+        popup.style.left = Math.min(x, window.innerWidth - 250) + 'px';
+        popup.style.top = Math.min(y, window.innerHeight - 400) + 'px';
+        
+        // Update overall color selection
+        document.querySelectorAll('.color-option').forEach(el => {
+            el.classList.toggle('selected', el.dataset.color === fib.color);
+        });
+        
+        // Update level toggles and color pickers
+        document.querySelectorAll('.quick-level-toggle').forEach(el => {
+            const level = el.dataset.level;
+            el.classList.toggle('active', fib.levels[level]);
+            
+            // Set individual level color
+            const colorPicker = el.querySelector('.level-color-picker');
+            if (colorPicker) {
+                const levelColor = (fib.levelColors && fib.levelColors[level]) || fib.color || '#3b82f6';
+                colorPicker.value = levelColor;
+            }
+        });
+    }
+
+    // Color picker
+    document.querySelectorAll('.color-option').forEach(el => {
+        el.addEventListener('click', () => {
+            if (currentQuickFib) {
+                currentQuickFib.color = el.dataset.color;
+                document.querySelectorAll('.color-option').forEach(c => c.classList.remove('selected'));
+                el.classList.add('selected');
+                draw();
+            }
+        });
+    });
+
+    // Level toggles
+    document.querySelectorAll('.quick-level-toggle').forEach(el => {
+        el.addEventListener('click', (e) => {
+            // Don't toggle if clicking on color picker
+            if (e.target.classList.contains('level-color-picker')) return;
+            
+            if (currentQuickFib) {
+                const level = el.dataset.level;
+                currentQuickFib.levels[level] = !currentQuickFib.levels[level];
+                el.classList.toggle('active', currentQuickFib.levels[level]);
+                draw();
+            }
+        });
+    });
+
+    // Individual level color pickers
+    document.querySelectorAll('.level-color-picker').forEach(picker => {
+        picker.addEventListener('input', (e) => {
+            if (currentQuickFib) {
+                const level = picker.dataset.level;
+                if (!currentQuickFib.levelColors) {
+                    currentQuickFib.levelColors = {};
+                }
+                currentQuickFib.levelColors[level] = e.target.value;
+                draw();
+            }
+        });
+    });
+
+    // Save as template
+    document.getElementById('saveTemplate').addEventListener('click', () => {
+        if (currentQuickFib) {
+            fibTemplate = {
+                color: currentQuickFib.color,
+                style: currentQuickFib.style,
+                levels: { ...currentQuickFib.levels }
+            };
+            localStorage.setItem('fibTemplate', JSON.stringify(fibTemplate));
+            
+            // Show feedback
+            const btn = document.getElementById('saveTemplate');
+            btn.textContent = '✓ Saved!';
+            btn.style.background = '#10b981';
+            btn.style.color = '#fff';
+            setTimeout(() => {
+                btn.textContent = '💾 Save as Template';
+                btn.style.background = '#2a2a2a';
+                btn.style.color = '#3b82f6';
+            }, 1500);
+        }
+    });
+
+    // Close quick settings on click outside
+    document.addEventListener('click', (e) => {
+        const popup = document.getElementById('quickFibSettings');
+        if (!popup.contains(e.target) && !canvas.contains(e.target)) {
+            popup.style.display = 'none';
+            currentQuickFib = null;
+            currentQuickFibIndex = null;
+        }
+    });
+
+    // Tools
+    function switchToCursor() {
+        currentTool = 'cursor';
+        document.getElementById('cursorTool').classList.add('active');
+        document.getElementById('lineTool').classList.remove('active');
+        document.getElementById('fibTool').classList.remove('active');
+        fibDrawing = null;
+        isDrawingFib = false;
+        canvas.style.cursor = 'default';
+    }
+
+    document.getElementById('cursorTool').addEventListener('click', () => {
+        switchToCursor();
+    });
+
+    document.getElementById('lineTool').addEventListener('click', () => {
+        currentTool = 'line';
+        document.getElementById('cursorTool').classList.remove('active');
+        document.getElementById('lineTool').classList.add('active');
+        document.getElementById('fibTool').classList.remove('active');
+        fibDrawing = null;
+        isDrawingFib = false;
+        canvas.style.cursor = 'crosshair';
+        draw();
+    });
+
+    document.getElementById('fibTool').addEventListener('click', () => {
+        currentTool = 'fib';
+        document.getElementById('cursorTool').classList.remove('active');
+        document.getElementById('lineTool').classList.remove('active');
+        document.getElementById('fibTool').classList.add('active');
+        canvas.style.cursor = 'crosshair';
+    });
+
+    // Tick size input
+    document.getElementById('tickSizeInput').addEventListener('change', (e) => {
+        const newTick = parseFloat(e.target.value);
+        if (newTick > 0 && newTick <= 1) {
+            CONFIG.tickSize = newTick;
+            console.log('Tick size updated to:', CONFIG.tickSize);
+        } else {
+            e.target.value = CONFIG.tickSize;
+            alert('Tick size must be between 0.01 and 1.0');
+        }
+    });
+
+    // Canvas interactions
+    let isDrawingFib = false;
+    let fibStartPoint = null;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    
+    // Touch support
+    let lastTouchDistance = 0;
+    let initialPinchZoom = 1;
+    let isTouching = false;
+
+    function getPriceFromY(y) {
+        const h = canvas.height / (window.devicePixelRatio || 1);
+        const allCandles = [...candles];
+        if (currentCandle) allCandles.push(currentCandle);
+        if (allCandles.length === 0) return null;
+
+        let minPrice = Math.min(...allCandles.map(c => c.l));
+        let maxPrice = Math.max(...allCandles.map(c => c.h));
+        const padding = (maxPrice - minPrice) * 0.15;
+        minPrice -= padding;
+        maxPrice += padding;
+        
+        // Apply vertical offset
+        const range = maxPrice - minPrice;
+        const verticalShift = (verticalOffset / h) * range;
+        minPrice += verticalShift;
+        maxPrice += verticalShift;
+        
+        // Apply price scale zoom
+        const center = (minPrice + maxPrice) / 2;
+        const zoomedRange = (maxPrice - minPrice) / priceScaleZoom;
+        minPrice = center - zoomedRange / 2;
+        maxPrice = center + zoomedRange / 2;
+
+        const price = yToPrice(y, h, minPrice, maxPrice);
+        return Math.round(price / CONFIG.tickSize) * CONFIG.tickSize;
+    }
+
+    function getObjectAtPosition(x, y) {
+        const h = canvas.height / (window.devicePixelRatio || 1);
+        const w = canvas.width / (window.devicePixelRatio || 1);
+        const price = getPriceFromY(y);
+        if (!price) return null;
+
+        // Check lines (within 5px)
+        for (let i = lines.length - 1; i >= 0; i--) {
+            const line = lines[i];
+            const lineY = priceToY(line.price, h, ...getPriceRange());
+            if (Math.abs(y - lineY) < 5 && x < w - 80) {
+                return { type: 'line', index: i, object: line };
+            }
+        }
+
+        // Check fibs - only within their X bounds
+        for (let i = fibs.length - 1; i >= 0; i--) {
+            const fib = fibs[i];
+            
+            // Calculate fib's current X position
+            const fibStartX = fib.startX + scrollOffset;
+            const fibEndX = fib.endX + scrollOffset;
+            const fibMinX = Math.min(fibStartX, fibEndX);
+            const fibMaxX = Math.max(fibStartX, fibEndX);
+            
+            // Check if click is within fib's horizontal bounds
+            if (x < fibMinX || x > fibMaxX) continue;
+            
+            const range = Math.abs(fib.endPrice - fib.startPrice);
+            const isUp = fib.endPrice > fib.startPrice;
+            
+            // Check if click is near any fib level
+            const levels = [0, 0.236, 0.382, 0.5, 0.618, 0.66, 0.786, 1];
+            for (const ratio of levels) {
+                const levelPrice = isUp 
+                    ? fib.startPrice + (range * ratio)
+                    : fib.startPrice - (range * ratio);
+                const levelY = priceToY(levelPrice, h, ...getPriceRange());
+                if (Math.abs(y - levelY) < 5) {
+                    return { type: 'fib', index: i, object: fib };
+                }
+            }
+        }
+
+        return null;
+    }
+
+    function getPriceRange() {
+        const h = canvas.height / (window.devicePixelRatio || 1);
+        const allCandles = [...candles];
+        if (currentCandle) allCandles.push(currentCandle);
+        
+        let minPrice = Math.min(...allCandles.map(c => c.l));
+        let maxPrice = Math.max(...allCandles.map(c => c.h));
+        const padding = (maxPrice - minPrice) * 0.15;
+        minPrice -= padding;
+        maxPrice += padding;
+
+        // Apply vertical offset (move chart up/down)
+        const range = maxPrice - minPrice;
+        const verticalShift = (verticalOffset / h) * range;
+        minPrice += verticalShift;
+        maxPrice += verticalShift;
+
+        // Apply price scale zoom
+        const center = (minPrice + maxPrice) / 2;
+        const zoomedRange = (maxPrice - minPrice) / priceScaleZoom;
+        minPrice = center - zoomedRange / 2;
+        maxPrice = center + zoomedRange / 2;
+        
+        return [minPrice, maxPrice];
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return; // Only left click
+        if (isDraggingPriceScale) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const w = canvas.width / (window.devicePixelRatio || 1);
+
+        // Price scale drag
+        if (x > w - 80) {
+            isDraggingPriceScale = true;
+            priceScaleDragStart = e.clientY;
+            canvas.style.cursor = 'ns-resize';
+            return;
+        }
+
+        const price = getPriceFromY(y);
+        if (!price) return;
+
+        // Check if clicking on existing line/fib to drag it
+        const obj = getObjectAtPosition(x, y);
+        if (obj && currentTool === 'cursor') {
+            isDraggingObject = true;
+            draggedObject = obj.object;
+            draggedObjectType = obj.type;
+            dragStartPrice = price;
+            canvas.style.cursor = 'grabbing';
+            return;
+        }
+
+        if (currentTool === 'cursor') {
+            // Enable dragging chart in cursor mode
+            isDragging = true;
+            lastX = e.clientX;
+            lastY = e.clientY;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            lastMoveTime = Date.now();
+            
+            // Stop momentum smoothly
+            if (isDecelerating) {
+                isDecelerating = false;
+                if (animationFrame) {
+                    cancelAnimationFrame(animationFrame);
+                }
+            }
+            velocityX = 0;
+            velocityY = 0;
+            
+            canvas.style.cursor = 'grabbing';
+        } else if (currentTool === 'line') {
+            lines.push({ 
+                price, 
+                x,
+                color: '#fbbf24', 
+                style: 'dashed', 
+                width: 2 
+            });
+            draw();
+            // Auto-switch back to cursor
+            switchToCursor();
+        } else if (currentTool === 'fib') {
+            isDrawingFib = true;
+            fibStartPoint = { price, x, y };
+            fibDrawing = { startPrice: price, startX: x };
+            draw();
+        }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const w = canvas.width / (window.devicePixelRatio || 1);
+        
+        // Price scale hover
+        if (!isDragging && !isDraggingPriceScale && !isDraggingObject && x > w - 80) {
+            canvas.style.cursor = 'ns-resize';
+        } else if (!isDragging && !isDraggingPriceScale && !isDrawingFib && !isDraggingObject) {
+            // Check if hovering over line or fib
+            const obj = getObjectAtPosition(x, y);
+            if (obj) {
+                canvas.style.cursor = 'pointer';
+            } else if (currentTool === 'cursor') {
+                canvas.style.cursor = 'grab';
+            } else if (currentTool === 'line' || currentTool === 'fib') {
+                canvas.style.cursor = 'crosshair';
+            } else {
+                canvas.style.cursor = 'default';
+            }
+        }
+        
+        // Price scale dragging
+        if (isDraggingPriceScale) {
+            const dy = e.clientY - priceScaleDragStart;
+            const zoomFactor = 1 - (dy / 500);
+            priceScaleZoom *= zoomFactor;
+            priceScaleZoom = Math.max(0.01, Math.min(50, priceScaleZoom)); // Allow extreme zoom out
+            priceScaleDragStart = e.clientY;
+            draw();
+            return;
+        }
+
+        // Dragging line or fib
+        if (isDraggingObject && draggedObject) {
+            const currentPrice = getPriceFromY(y);
+            if (currentPrice) {
+                const priceDelta = currentPrice - dragStartPrice;
+                
+                if (draggedObjectType === 'line') {
+                    draggedObject.price += priceDelta;
+                    draggedObject.price = Math.round(draggedObject.price / CONFIG.tickSize) * CONFIG.tickSize;
+                } else if (draggedObjectType === 'fib') {
+                    draggedObject.startPrice += priceDelta;
+                    draggedObject.endPrice += priceDelta;
+                    draggedObject.startPrice = Math.round(draggedObject.startPrice / CONFIG.tickSize) * CONFIG.tickSize;
+                    draggedObject.endPrice = Math.round(draggedObject.endPrice / CONFIG.tickSize) * CONFIG.tickSize;
+                }
+                
+                dragStartPrice = currentPrice;
+                draw();
+            }
+            return;
+        }
+
+        // Drawing fib
+        if (isDrawingFib && fibDrawing && fibStartPoint) {
+            const price = getPriceFromY(y);
+            if (price) {
+                // Show preview line while dragging
+                draw();
+                const ctx = canvas.getContext('2d');
+                const h = canvas.height / (window.devicePixelRatio || 1);
+                const [minPrice, maxPrice] = getPriceRange();
+                const y2 = priceToY(price, h, minPrice, maxPrice);
+                
+                const startXPos = fibStartPoint.x + scrollOffset;
+                const currentXPos = x;
+                
+                ctx.strokeStyle = '#fbbf24';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(Math.max(0, Math.min(startXPos, currentXPos)), y2);
+                ctx.lineTo(Math.min(w - 80, Math.max(startXPos, currentXPos)), y2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+        
+        // Chart scrolling (works in cursor mode when dragging)
+        if (isDragging) {
+            const currentTime = Date.now();
+            const deltaTime = currentTime - lastMoveTime;
+            
+            if (deltaTime > 0) {
+                const dx = e.clientX - lastX;
+                const dy = e.clientY - lastY;
+                
+                // Smooth, fluid scrolling
+                scrollOffset += dx;
+                verticalOffset += dy;
+                
+                // Calculate velocity for momentum
+                velocityX = dx / deltaTime * 16; // Normalize to 60fps
+                velocityY = dy / deltaTime * 16;
+                
+                lastX = e.clientX;
+                lastY = e.clientY;
+                lastMoveTime = currentTime;
+                
+                draw();
+            }
+        }
+
+        // Show tooltip with candle time
+        showCandleTooltip(x, y);
+        
+        // Update crosshair when using line/fib tools
+        updateCrosshair(x, y);
+    });
+
+    canvas.addEventListener('mouseup', (e) => {
+        if (e.button !== 0) return;
+
+        if (isDrawingFib && fibStartPoint) {
+            const rect = canvas.getBoundingClientRect();
+            const y = e.clientY - rect.top;
+            const x = e.clientX - rect.left;
+            const price = getPriceFromY(y);
+            
+            if (price && price !== fibDrawing.startPrice) {
+                // Store fib position relative to candles, not screen
+                const allCandles = [...candles];
+                if (currentCandle) allCandles.push(currentCandle);
+                const candleW = CONFIG.candleWidth * zoomLevel;
+                const gap = CONFIG.candleGap * zoomLevel;
+                
+                fibs.push({
+                    startPrice: fibDrawing.startPrice,
+                    endPrice: price,
+                    startCandleIndex: Math.floor((fibStartPoint.x - 100) / (candleW + gap)), // Relative to candle index
+                    endCandleIndex: Math.floor((x - 100) / (candleW + gap)),
+                    color: fibTemplate.color,
+                    style: fibTemplate.style,
+                    levels: { ...fibTemplate.levels },
+                    levelColors: {} // Individual colors for each level
+                });
+            }
+            
+            fibDrawing = null;
+            isDrawingFib = false;
+            fibStartPoint = null;
+            draw();
+            
+            // Auto-switch back to cursor
+            switchToCursor();
+        }
+
+        // Start momentum scrolling if there's velocity
+        if (isDragging && (Math.abs(velocityX) > 0.5 || Math.abs(velocityY) > 0.5)) {
+            startMomentumScroll();
+        }
+
+        if (isDragging && currentTool === 'cursor') {
+            canvas.style.cursor = 'grab';
+        }
+
+        isDragging = false;
+        isDraggingPriceScale = false;
+        isDraggingObject = false;
+        draggedObject = null;
+        draggedObjectType = null;
+    });
+
+    function startMomentumScroll() {
+        if (animationFrame) {
+            cancelAnimationFrame(animationFrame);
+        }
+        
+        isDecelerating = true;
+        
+        function momentumFrame() {
+            if (!isDecelerating) return;
+            
+            // Apply velocity
+            scrollOffset += velocityX;
+            verticalOffset += velocityY;
+            
+            // Smooth deceleration (like TradingView)
+            const friction = 0.93; // Higher = longer glide
+            velocityX *= friction;
+            velocityY *= friction;
+            
+            // Stop when velocity is negligible
+            if (Math.abs(velocityX) < 0.05 && Math.abs(velocityY) < 0.05) {
+                isDecelerating = false;
+                velocityX = 0;
+                velocityY = 0;
+                return;
+            }
+            
+            draw();
+            animationFrame = requestAnimationFrame(momentumFrame);
+        }
+        
+        momentumFrame();
+    }
+
+    // Right-click context menu
+    canvas.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const obj = getObjectAtPosition(x, y);
+        
+        if (obj) {
+            selectedObject = obj;
+            contextMenuType = obj.type;
+            
+            const menu = document.getElementById('contextMenu');
+            menu.style.display = 'block';
+            menu.style.left = e.clientX + 'px';
+            menu.style.top = e.clientY + 'px';
+        }
+    });
+
+    // Close context menu on click elsewhere
+    document.addEventListener('click', () => {
+        document.getElementById('contextMenu').style.display = 'none';
+    });
+
+    // Context menu actions
+    document.getElementById('ctxSettings').addEventListener('click', () => {
+        if (!selectedObject) return;
+        
+        const modal = document.getElementById('settingsModal');
+        modal.style.display = 'flex';
+        
+        if (contextMenuType === 'fib') {
+            document.getElementById('settingsTitle').textContent = 'Fibonacci Settings';
+            document.getElementById('fibSettings').style.display = 'block';
+            document.getElementById('lineSettings').style.display = 'none';
+            
+            const fib = selectedObject.object;
+            document.getElementById('fibColor').value = fib.color || '#3b82f6';
+            document.getElementById('fibStyle').value = fib.style || 'dashed';
+            
+            // Set level checkboxes
+            Object.keys(fib.levels || {}).forEach(key => {
+                const checkbox = document.getElementById(key);
+                if (checkbox) checkbox.checked = fib.levels[key];
+            });
+        } else if (contextMenuType === 'line') {
+            document.getElementById('settingsTitle').textContent = 'Line Settings';
+            document.getElementById('fibSettings').style.display = 'none';
+            document.getElementById('lineSettings').style.display = 'block';
+            
+            const line = selectedObject.object;
+            document.getElementById('lineColor').value = line.color || '#fbbf24';
+            document.getElementById('lineStyle').value = line.style || 'dashed';
+            document.getElementById('lineWidth').value = line.width || 2;
+        }
+    });
+
+    document.getElementById('ctxDelete').addEventListener('click', () => {
+        if (!selectedObject) return;
+        
+        if (contextMenuType === 'fib') {
+            fibs.splice(selectedObject.index, 1);
+        } else if (contextMenuType === 'line') {
+            lines.splice(selectedObject.index, 1);
+        }
+        
+        selectedObject = null;
+        draw();
+    });
+
+    // Settings modal handlers
+    document.getElementById('cancelSettings').addEventListener('click', () => {
+        document.getElementById('settingsModal').style.display = 'none';
+    });
+
+    document.getElementById('saveSettings').addEventListener('click', () => {
+        if (!selectedObject) return;
+        
+        if (contextMenuType === 'fib') {
+            const fib = fibs[selectedObject.index];
+            fib.color = document.getElementById('fibColor').value;
+            fib.style = document.getElementById('fibStyle').value;
+            
+            // Save level settings
+            fib.levels = {
+                fib0: document.getElementById('fib0').checked,
+                fib236: document.getElementById('fib236').checked,
+                fib382: document.getElementById('fib382').checked,
+                fib50: document.getElementById('fib50').checked,
+                fib618: document.getElementById('fib618').checked,
+                fib66: document.getElementById('fib66').checked,
+                fib786: document.getElementById('fib786').checked,
+                fib100: document.getElementById('fib100').checked
+            };
+        } else if (contextMenuType === 'line') {
+            const line = lines[selectedObject.index];
+            line.color = document.getElementById('lineColor').value;
+            line.style = document.getElementById('lineStyle').value;
+            line.width = parseInt(document.getElementById('lineWidth').value);
+        }
+        
+        document.getElementById('settingsModal').style.display = 'none';
+        draw();
+    });
+
+    // Close modal on background click
+    document.getElementById('settingsModal').addEventListener('click', (e) => {
+        if (e.target.id === 'settingsModal') {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+    });
+
+    // Zoom
+    function zoom(factor) {
+        zoomLevel *= factor;
+        zoomLevel = Math.max(0.1, Math.min(5, zoomLevel)); // Allow more zoom range
+        updateStatsTable(); // Regenerate table with new column widths
+        draw();
+    }
+
+    function resetZoom() {
+        zoomLevel = 1;
+        scrollOffset = 0;
+        verticalOffset = 0;
+        priceScaleZoom = 1;
+        updateStatsTable(); // Regenerate table
+        draw();
+    }
+
+    // Update crosshair
+    function updateCrosshair(x, y) {
+        const crosshair = document.getElementById('crosshair');
+        const w = canvas.width / (window.devicePixelRatio || 1);
+        
+        // Show crosshair only when using line/fib tools and not over price scale
+        if ((currentTool === 'line' || currentTool === 'fib' || isDrawingFib) && x < w - 80) {
+            crosshair.style.display = 'block';
+            
+            const lineH = crosshair.querySelector('.crosshair-line-h');
+            const lineV = crosshair.querySelector('.crosshair-line-v');
+            const priceLabel = crosshair.querySelector('.crosshair-price');
+            
+            lineH.style.top = y + 'px';
+            lineV.style.left = x + 'px';
+            
+            // Show price at crosshair
+            const price = getPriceFromY(y);
+            if (price) {
+                priceLabel.textContent = price.toFixed(2);
+            }
+        } else {
+            crosshair.style.display = 'none';
+        }
+    }
+
+    // Show candle tooltip
+    function showCandleTooltip(x, y) {
+        const w = canvas.width / (window.devicePixelRatio || 1);
+        if (x > w - 80) {
+            document.getElementById('tooltip').style.display = 'none';
+            return;
+        }
+
+        const allCandles = [...candles];
+        if (currentCandle) allCandles.push(currentCandle);
+
+        const candleW = CONFIG.candleWidth * zoomLevel;
+        const gap = CONFIG.candleGap * zoomLevel;
+        const totalWidth = allCandles.length * (candleW + gap);
+        const leftMargin = CONFIG.showVolumeProfile ? 20 + CONFIG.volumeProfileWidth + 30 : 20;
+        const rightMargin = 100;
+        const chartWidth = w - 80 - rightMargin;
+        
+        // Allow free scrolling
+        const startX = chartWidth - totalWidth + scrollOffset;
+
+        // Find candle at mouse position
+        for (let i = 0; i < allCandles.length; i++) {
+            const candleX = startX + (i * (candleW + gap));
+            if (x >= candleX && x <= candleX + candleW) {
+                const candle = allCandles[i];
+                let timeFormat;
+                
+                if (candleInterval === 86400000) {
+                    // Daily - show just date
+                    timeFormat = new Date(candle.t).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+                } else {
+                    // Intraday - show date and time
+                    timeFormat = new Date(candle.t).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                }
+
+                const tooltip = document.getElementById('tooltip');
+                tooltip.textContent = `${timeFormat} (${getTimeframeString(candleInterval)})`;
+                tooltip.style.display = 'block';
+                return;
+            }
+        }
+
+        document.getElementById('tooltip').style.display = 'none';
+    }
+
+    // Mouse wheel zoom
+    canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const w = canvas.width / (window.devicePixelRatio || 1);
+        
+        // Check if scrolling over price scale (right side)
+        if (x > w - 80) {
+            // Zoom price scale
+            const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
+            priceScaleZoom *= zoomFactor;
+            priceScaleZoom = Math.max(0.01, Math.min(50, priceScaleZoom));
+            draw();
+        } else {
+            // Zoom candles
+            const factor = e.deltaY < 0 ? 1.1 : 0.9;
+            zoom(factor);
+        }
+    });
+
+    // Touch events for mobile
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        isTouching = true;
+        
+        // Reset price scale state - will be set to true if touching price scale
+        isPriceScaleTouching = false;
+        
+        const touches = e.touches;
+        
+        if (touches.length === 1) {
+            // Single touch
+            const touch = touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            const w = canvas.width / (window.devicePixelRatio || 1);
+            
+            // Check price scale - allow scrolling
+            if (x > w - 80) {
+                isPriceScaleTouching = true;
+                priceScaleTouchStart = touch.clientY;
+                return;
+            }
+            
+            // Check if touching existing line/fib (only if in cursor mode and object exists)
+            if (currentTool === 'cursor') {
+                const price = getPriceFromY(y);
+                const obj = getObjectAtPosition(x, y);
+                
+                if (obj && price) {
+                    if (obj.type === 'fib') {
+                        // Show quick settings for fib
+                        showQuickFibSettings(obj.object, obj.index, x, y);
+                        return;
+                    } else {
+                        // Drag line
+                        isDraggingObject = true;
+                        draggedObject = obj.object;
+                        draggedObjectType = obj.type;
+                        dragStartPrice = price;
+                        return;
+                    }
+                }
+                
+                // Always allow panning in cursor mode (even if no price/object)
+                lastX = touch.clientX;
+                lastY = touch.clientY;
+                dragStartX = touch.clientX;
+                dragStartY = touch.clientY;
+                lastMoveTime = Date.now();
+                isDragging = true;
+                
+                // Stop momentum coasting
+                if (isCoasting) {
+                    isCoasting = false;
+                    if (coastingAnimationFrame) {
+                        cancelAnimationFrame(coastingAnimationFrame);
+                    }
+                }
+                velocityX = 0;
+                velocityY = 0;
+            } else if (currentTool === 'line') {
+                const price = getPriceFromY(y);
+                if (!price) return;
+                
+                // Place line
+                lines.push({
+                    price,
+                    x,
+                    color: '#fbbf24',
+                    style: 'dashed',
+                    width: 2
+                });
+                draw();
+                switchToCursor();
+            } else if (currentTool === 'fib') {
+                const price = getPriceFromY(y);
+                if (!price) return;
+                
+                // Start drawing fib
+                isDrawingFib = true;
+                fibStartPoint = { price, x, y };
+                fibDrawing = { startPrice: price, startX: x };
+                draw();
+            }
+        } else if (touches.length === 2) {
+            // Two finger pinch - zoom
+            const touch1 = touches[0];
+            const touch2 = touches[1];
+            const dx = touch2.clientX - touch1.clientX;
+            const dy = touch2.clientY - touch1.clientY;
+            lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
+            initialPinchZoom = zoomLevel;
+        }
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touches = e.touches;
+        
+        if (touches.length === 1) {
+            const touch = touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            const w = canvas.width / (window.devicePixelRatio || 1);
+            
+            // Exit price scale mode if finger moved away from price scale
+            if (isPriceScaleTouching && x <= w - 80) {
+                isPriceScaleTouching = false;
+                isDragging = true;
+                lastX = touch.clientX;
+                lastY = touch.clientY;
+                lastMoveTime = Date.now();
+                velocityX = 0;
+                velocityY = 0;
+            }
+            
+            // Handle price scale scrolling
+            if (isPriceScaleTouching) {
+                const dy = priceScaleTouchStart - touch.clientY; // Reverse for natural scrolling
+                const scrollAmount = dy / 500;
+                priceScaleZoom *= (1 + scrollAmount);
+                priceScaleZoom = Math.max(0.01, Math.min(50, priceScaleZoom));
+                priceScaleTouchStart = touch.clientY;
+                draw();
+                return;
+            }
+            
+            // Dragging line or fib
+            if (isDraggingObject && draggedObject) {
+                const currentPrice = getPriceFromY(y);
+                if (currentPrice) {
+                    const priceDelta = currentPrice - dragStartPrice;
+                    
+                    if (draggedObjectType === 'line') {
+                        draggedObject.price += priceDelta;
+                        draggedObject.price = Math.round(draggedObject.price / CONFIG.tickSize) * CONFIG.tickSize;
+                    } else if (draggedObjectType === 'fib') {
+                        draggedObject.startPrice += priceDelta;
+                        draggedObject.endPrice += priceDelta;
+                        draggedObject.startPrice = Math.round(draggedObject.startPrice / CONFIG.tickSize) * CONFIG.tickSize;
+                        draggedObject.endPrice = Math.round(draggedObject.endPrice / CONFIG.tickSize) * CONFIG.tickSize;
+                    }
+                    
+                    dragStartPrice = currentPrice;
+                    draw();
+                }
+                return;
+            }
+            
+            // Drawing fib
+            if (isDrawingFib && fibDrawing && fibStartPoint) {
+                const price = getPriceFromY(y);
+                if (price) {
+                    draw();
+                    const ctx = canvas.getContext('2d');
+                    const h = canvas.height / (window.devicePixelRatio || 1);
+                    const w = canvas.width / (window.devicePixelRatio || 1);
+                    const [minPrice, maxPrice] = getPriceRange();
+                    const y2 = priceToY(price, h, minPrice, maxPrice);
+                    
+                    const startXPos = fibStartPoint.x + scrollOffset;
+                    const currentXPos = x;
+                    
+                    ctx.strokeStyle = '#fbbf24';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(Math.max(0, Math.min(startXPos, currentXPos)), y2);
+                    ctx.lineTo(Math.min(w - 80, Math.max(startXPos, currentXPos)), y2);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+                return;
+            }
+            
+            // Single touch pan
+            if (isDragging) {
+                const currentTime = Date.now();
+                const deltaTime = Math.max(currentTime - lastMoveTime, 1);
+                
+                const dx = touch.clientX - lastX;
+                const dy = touch.clientY - lastY;
+                
+                // Smooth, fluid scrolling in all directions
+                scrollOffset += dx;
+                verticalOffset += dy;
+                
+                // Track velocity for momentum
+                velocityX = dx / deltaTime * 16;
+                velocityY = dy / deltaTime * 16;
+                
+                lastX = touch.clientX;
+                lastY = touch.clientY;
+                lastMoveTime = currentTime;
+                
+                draw();
+                showCandleTooltip(x, y);
+            }
+        } else if (touches.length === 2) {
+            // Two finger pinch zoom
+            const touch1 = touches[0];
+            const touch2 = touches[1];
+            const dx = touch2.clientX - touch1.clientX;
+            const dy = touch2.clientY - touch1.clientY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (lastTouchDistance > 0) {
+                const scale = distance / lastTouchDistance;
+                const newZoom = initialPinchZoom * scale;
+                if (Math.abs(newZoom - zoomLevel) > 0.05) { // Only update if significant change
+                    zoomLevel = Math.max(0.1, Math.min(5, newZoom));
+                    updateStatsTable(); // Regenerate table with new widths
+                    draw();
+                }
+            }
+        }
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        
+        // Complete fib drawing
+        if (isDrawingFib && fibStartPoint && e.changedTouches.length > 0) {
+            const touch = e.changedTouches[0];
+            const rect = canvas.getBoundingClientRect();
+            const y = touch.clientY - rect.top;
+            const x = touch.clientX - rect.left;
+            const price = getPriceFromY(y);
+            
+            if (price && price !== fibDrawing.startPrice) {
+                const allCandles = [...candles];
+                if (currentCandle) allCandles.push(currentCandle);
+                const candleW = CONFIG.candleWidth * zoomLevel;
+                const gap = CONFIG.candleGap * zoomLevel;
+                
+                fibs.push({
+                    startPrice: fibDrawing.startPrice,
+                    endPrice: price,
+                    startCandleIndex: Math.floor((fibStartPoint.x - 100) / (candleW + gap)),
+                    endCandleIndex: Math.floor((x - 100) / (candleW + gap)),
+                    color: fibTemplate.color,
+                    style: fibTemplate.style,
+                    levels: { ...fibTemplate.levels },
+                    levelColors: {}
+                });
+                
+                switchToCursor();
+            }
+            
+            fibDrawing = null;
+            isDrawingFib = false;
+            fibStartPoint = null;
+            draw();
+        }
+        
+        // Start momentum coasting if there's velocity from dragging
+        if (isDragging && (Math.abs(velocityX) > 0.5 || Math.abs(velocityY) > 0.5)) {
+            startCoasting();
+        }
+        
+        isDragging = false;
+        isTouching = false;
+        lastTouchDistance = 0;
+        isDraggingObject = false;
+        draggedObject = null;
+        draggedObjectType = null;
+        isPriceScaleTouching = false;
+        
+        // Start momentum scrolling on release
+        if (e.touches.length === 0 && (Math.abs(velocityX) > 0.5 || Math.abs(velocityY) > 0.5)) {
+            startMomentumScroll();
+        }
+        
+        if (e.touches.length === 0) {
+            document.getElementById('tooltip').style.display = 'none';
+        }
+    }, { passive: false });
+
+    canvas.addEventListener('touchcancel', (e) => {
+        e.preventDefault();
+        isDragging = false;
+        isTouching = false;
+        lastTouchDistance = 0;
+        isDraggingObject = false;
+        draggedObject = null;
+        draggedObjectType = null;
+        isDrawingFib = false;
+        fibDrawing = null;
+        fibStartPoint = null;
+        isPriceScaleTouching = false;
+        document.getElementById('tooltip').style.display = 'none';
+    }, { passive: false });
+
+    // Drag to scroll
+    let isDragging = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const w = canvas.width / (window.devicePixelRatio || 1);
+        
+        // Check if clicking on price scale area (right 80px)
+        if (x > w - 80) {
+            isDraggingPriceScale = true;
+            priceScaleDragStart = e.clientY;
+            canvas.style.cursor = 'ns-resize';
+            return;
+        }
+        
+        // Only enable chart dragging in cursor mode
+        if (currentTool === 'cursor') {
+            isDragging = true;
+            lastX = e.clientX;
+            lastY = e.clientY;
+        }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+        isDragging = false;
+        isDraggingPriceScale = false;
+        canvas.style.cursor = 'crosshair';
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+        isDragging = false;
+        isDraggingPriceScale = false;
+        if (currentTool === 'cursor') {
+            canvas.style.cursor = 'grab';
+        } else if (currentTool === 'line' || currentTool === 'fib') {
+            canvas.style.cursor = 'crosshair';
+        }
+        document.getElementById('tooltip').style.display = 'none';
+        document.getElementById('crosshair').style.display = 'none';
+    });
+
+    console.log('ES Orderflow Chart Ready');
+    console.log('💡 Drag price scale DOWN to compress, UP to expand');
+    console.log('💡 Scroll over price scale to zoom in/out');
+    console.log('💡 Right-click on lines/fibs to edit or delete');
+    console.log('💡 Hover over candles to see timestamp');
+    console.log('💡 Click-drag-release to draw Fibonacci retracement');
+    console.log('📱 Mobile: Single finger to pan, two fingers to pinch zoom');
+    console.log('⌨️  Keyboard: ESC = Cursor, L = Line, F = Fib, R = Reset Zoom, V = Toggle Volume Profile');
+    console.log('');
+    console.log('📊 Exchange Integration:');
+    console.log('   • FREE real-time Bitcoin data');
+    console.log('   • No API key required');
+    console.log('   • Current: ' + (EXCHANGE_CONFIG[EXCHANGE_CONFIG.exchange]?.displayName || 'None'));
+    console.log('   • Symbol: BTCUSDT');
+    console.log('   • Status indicator in top-right corner');
+    console.log('   • Change exchange in EXCHANGE_CONFIG.exchange');
+
+    // Initialize exchange connection with error handling
+    try {
+        console.log('🚀 Starting exchange connection...');
+        connectToExchange();
+        updateConnectionStatus(isConnected);
+        console.log('✅ Initialization complete');
+    } catch (error) {
+        console.error('❌ INITIALIZATION ERROR:', error);
+        console.error('Stack:', error.stack);
+        document.getElementById('symbol').textContent = 'BTC/USDT - Error: ' + error.message;
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT') return; // Don't interfere with inputs
+        
+        switch(e.key.toLowerCase()) {
+            case 'escape':
+                switchToCursor();
+                break;
+            case 'l':
+                document.getElementById('lineTool').click();
+                break;
+            case 'f':
+                document.getElementById('fibTool').click();
+                break;
+            case 'r':
+                resetZoom();
+                break;
+            case 'v':
+                toggleVolumeProfile();
+                break;
+            case 'delete':
+            case 'backspace':
+                // Delete selected object if any
+                if (selectedObject && (e.key === 'Delete' || e.key === 'Backspace')) {
+                    e.preventDefault();
+                    if (contextMenuType === 'fib') {
+                        fibs.splice(selectedObject.index, 1);
+                    } else if (contextMenuType === 'line') {
+                        lines.splice(selectedObject.index, 1);
+                    }
+                    selectedObject = null;
+                    draw();
+                }
+                break;
+        }
+    });
+
+    // Double-click to fit view to candles
+    canvas.addEventListener('dblclick', (e) => {
+        if (currentTool === 'cursor') {
+            resetZoom();
+        }
+    });
+</script>
+```
+
+</body>
+</html>
