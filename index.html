@@ -2031,10 +2031,24 @@
         // Calculate CVD for ALL candles
         let runningCVD = 0;
         const candleData = allCandles.map(c => {
-            const delta = c.bv - c.av;
+            // Calculate bid and ask volumes from footprint
+            let bidVol = 0;
+            let askVol = 0;
+            
+            if (c.fp) {
+                Object.values(c.fp).forEach(fp => {
+                    if (fp && typeof fp === 'object') {
+                        bidVol += fp.b || 0;
+                        askVol += fp.a || 0;
+                    }
+                });
+            }
+            
+            const delta = bidVol - askVol;
             runningCVD += delta;
+            
             return {
-                volume: c.v,
+                volume: c.v || 0,
                 delta: delta,
                 cvd: runningCVD
             };
@@ -2089,21 +2103,23 @@
             html += `<div class="stat-cell volume-cell">${volStr}</div>`;
             
             // Delta
-            const deltaStr = data.delta >= 1000000 
+            const deltaStr = (data.delta == null || isNaN(data.delta)) ? '0' :
+                data.delta >= 1000000 
                 ? (data.delta >= 0 ? '+' : '') + (data.delta / 1000000).toFixed(1) + 'M'
                 : data.delta >= 1000
                 ? (data.delta >= 0 ? '+' : '') + (data.delta / 1000).toFixed(1) + 'K'
                 : (data.delta >= 0 ? '+' : '') + data.delta.toFixed(0);
-            const deltaClass = data.delta >= 0 ? 'positive' : 'negative';
+            const deltaClass = (data.delta == null || data.delta >= 0) ? 'positive' : 'negative';
             html += `<div class="stat-cell delta-cell ${deltaClass}">${deltaStr}</div>`;
             
             // CVD
-            const cvdStr = data.cvd >= 1000000
+            const cvdStr = (data.cvd == null || isNaN(data.cvd)) ? '0' :
+                data.cvd >= 1000000
                 ? (data.cvd >= 0 ? '+' : '') + (data.cvd / 1000000).toFixed(0) + 'M'
                 : data.cvd >= 1000
                 ? (data.cvd >= 0 ? '+' : '') + (data.cvd / 1000).toFixed(0) + 'K'
                 : (data.cvd >= 0 ? '+' : '') + data.cvd.toFixed(0);
-            const cvdClass = data.cvd >= 0 ? 'positive' : 'negative';
+            const cvdClass = (data.cvd == null || data.cvd >= 0) ? 'positive' : 'negative';
             html += `<div class="stat-cell cvd-cell ${cvdClass}">${cvdStr}</div>`;
             
             html += '</div>';
