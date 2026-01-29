@@ -713,8 +713,8 @@
 
     // Configuration
     const CONFIG = {
-        candleWidth: 100,
-        candleGap: 20,
+        candleWidth: 60,  // Reduced from 100 for better mobile fit
+        candleGap: 8,     // Reduced from 20 for better mobile fit
         tickSize: 1.0,
         colors: {
             bg: '#000000',
@@ -735,7 +735,10 @@
     let currentCandle = null;
     let candleInterval = 15 * 60 * 1000; // 15 minutes
     let candleStartTime = alignToTimeframe(Date.now(), candleInterval);
-    let zoomLevel = 1;
+    
+    // Auto-detect mobile and set appropriate initial zoom
+    const isMobile = window.innerWidth < 768;
+    let zoomLevel = isMobile ? 0.4 : 1;
     let scrollOffset = 0;
     let socket = null;
     let isConnected = false;
@@ -856,6 +859,35 @@
             updateFootprintBar();
             updateCVDBar();
         });
+        
+        // Auto-fit view on first few candles for mobile
+        if (candles.length <= 3 && window.innerWidth < 768) {
+            autoFitView();
+        }
+    }
+
+    function autoFitView() {
+        const w = canvas.width / (window.devicePixelRatio || 1);
+        const allCandles = [...candles];
+        if (currentCandle) allCandles.push(currentCandle);
+        
+        if (allCandles.length === 0) return;
+        
+        const candleW = CONFIG.candleWidth * zoomLevel;
+        const gap = CONFIG.candleGap * zoomLevel;
+        const totalWidth = allCandles.length * (candleW + gap);
+        const priceScaleWidth = w < 480 ? 50 : (w < 768 ? 55 : 70);
+        const chartWidth = w - priceScaleWidth;
+        
+        // Auto-scroll to show all candles
+        if (totalWidth < chartWidth) {
+            scrollOffset = 0;
+        } else {
+            scrollOffset = chartWidth - totalWidth;
+        }
+        
+        draw();
+        console.log('📐 Auto-fitted view for mobile');
     }
 
     function createNewCandle(price) {
@@ -916,23 +948,23 @@
         minPrice -= padding;
         maxPrice += padding;
 
-        // Grid
-        drawGrid(w, h, minPrice, maxPrice);
-
-        // Adjust candle width for mobile
-        const isMobile = w < 768;
-        const candleW = (isMobile ? CONFIG.candleWidth * 0.7 : CONFIG.candleWidth) * zoomLevel;
-        const gap = (isMobile ? CONFIG.candleGap * 0.6 : CONFIG.candleGap) * zoomLevel;
-        const priceScaleWidth = isMobile ? 60 : 80;
+        // Price scale width based on screen size
+        const priceScaleWidth = w < 480 ? 50 : (w < 768 ? 55 : 70);
         
+        // Grid
+        drawGrid(w, h, minPrice, maxPrice, priceScaleWidth);
+
+        // Calculate candle dimensions
+        const candleW = CONFIG.candleWidth * zoomLevel;
+        const gap = CONFIG.candleGap * zoomLevel;
         const totalWidth = allCandles.length * (candleW + gap);
         const chartWidth = w - priceScaleWidth;
         const startX = chartWidth - totalWidth + scrollOffset;
 
-        // Candles
+        // Draw candles
         allCandles.forEach((candle, i) => {
             const x = startX + i * (candleW + gap);
-            if (x + candleW < 0 || x > chartWidth) return;
+            if (x + candleW < -10 || x > chartWidth + 10) return;
             drawCandle(candle, x, candleW, h, minPrice, maxPrice, i === allCandles.length - 1);
         });
 
@@ -940,8 +972,7 @@
         drawPriceScale(w, h, minPrice, maxPrice, priceScaleWidth);
     }
 
-    function drawGrid(w, h, minPrice, maxPrice) {
-        const priceScaleWidth = w < 768 ? 60 : 80;
+    function drawGrid(w, h, minPrice, maxPrice, priceScaleWidth) {
         const chartWidth = w - priceScaleWidth;
         
         ctx.strokeStyle = CONFIG.colors.grid;
@@ -1003,8 +1034,8 @@
             return;
         }
         
-        // Don't show footprint on very small candles (mobile)
-        const minWidth = window.innerWidth < 768 ? 60 : 80;
+        // Always show footprint if candle is wide enough (lower threshold for mobile)
+        const minWidth = 20; // Very low threshold - almost always show
         if (w < minWidth) return;
         
         const prices = Object.keys(candle.fp).map(p => parseFloat(p)).sort((a, b) => b - a);
@@ -1013,11 +1044,10 @@
             return;
         }
         
-        const fontSize = window.innerWidth < 480 ? 9 : (window.innerWidth < 768 ? 10 : 11);
+        // Smaller font on mobile
+        const fontSize = window.innerWidth < 480 ? 8 : (window.innerWidth < 768 ? 9 : 10);
         ctx.font = `${fontSize}px monospace`;
         ctx.fontWeight = 'normal';
-        
-        let displayedCount = 0;
         
         prices.forEach(price => {
             const key = price.toFixed(2);
@@ -1034,28 +1064,26 @@
             
             if (bidVol === 0 && askVol === 0) return;
 
-            const total = bidVol + askVol;
             const ratio = bidVol / Math.max(askVol, 0.01);
             const isImbalance = ratio > 1.5 || ratio < (1/1.5);
 
-            const padding = window.innerWidth < 768 ? 4 : 6;
-            const textOffset = window.innerWidth < 768 ? 6 : 8;
+            const padding = 2;
+            const textOffset = 3;
 
             // Bid (left side)
             if (bidVol > 0) {
                 const color = isImbalance && bidVol > askVol ? '#fbbf24' : CONFIG.colors.bidVol;
                 const bg = isImbalance && bidVol > askVol ? 'rgba(251, 191, 36, 0.2)' : 'transparent';
                 
-                if (bg !== 'transparent') {
+                if (bg !== 'transparent' && w > 40) {
                     ctx.fillStyle = bg;
-                    ctx.fillRect(x + padding, y - 7, w/2 - padding * 2, 14);
+                    ctx.fillRect(x + padding, y - 6, w/2 - padding * 2, 12);
                 }
                 
                 ctx.fillStyle = color;
                 ctx.textAlign = 'left';
                 ctx.font = isImbalance && bidVol > askVol ? `bold ${fontSize}px monospace` : `${fontSize}px monospace`;
-                ctx.fillText(Math.round(bidVol), x + textOffset, y + 4);
-                displayedCount++;
+                ctx.fillText(Math.round(bidVol), x + textOffset, y + 3);
             }
 
             // Ask (right side)
@@ -1063,22 +1091,17 @@
                 const color = isImbalance && askVol > bidVol ? '#ef8b5f' : CONFIG.colors.askVol;
                 const bg = isImbalance && askVol > bidVol ? 'rgba(239, 139, 95, 0.2)' : 'transparent';
                 
-                if (bg !== 'transparent') {
+                if (bg !== 'transparent' && w > 40) {
                     ctx.fillStyle = bg;
-                    ctx.fillRect(x + w/2 + padding/2, y - 7, w/2 - padding * 2, 14);
+                    ctx.fillRect(x + w/2 + padding/2, y - 6, w/2 - padding * 2, 12);
                 }
                 
                 ctx.fillStyle = color;
                 ctx.textAlign = 'right';
                 ctx.font = isImbalance && askVol > bidVol ? `bold ${fontSize}px monospace` : `${fontSize}px monospace`;
-                ctx.fillText(Math.round(askVol), x + w - textOffset, y + 4);
-                displayedCount++;
+                ctx.fillText(Math.round(askVol), x + w - textOffset, y + 3);
             }
         });
-        
-        if (displayedCount > 0 && displayedCount % 10 === 0) {
-            console.log(`Displayed ${displayedCount} footprint entries`);
-        }
     }
 
     function drawPriceScale(w, h, minPrice, maxPrice, priceScaleWidth) {
