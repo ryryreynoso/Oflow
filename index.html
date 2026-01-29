@@ -4,147 +4,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title>BTC Professional Orderflow</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>BTC Orderflow - Mobile</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
 ```
     body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-        background: #000000;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #000;
         color: #fff;
         overflow: hidden;
         -webkit-font-smoothing: antialiased;
+        touch-action: none;
     }
 
-    /* Top Header Bar */
     .top-bar {
-        height: 60px;
+        height: 50px;
         background: #0a0a0a;
         border-bottom: 1px solid #1a1a1a;
         display: flex;
         align-items: center;
-        padding: 0 20px;
-        gap: 20px;
+        padding: 0 12px;
+        gap: 12px;
     }
 
-    .menu-icon {
-        width: 40px;
-        height: 40px;
-        border: 2px solid #2a2a2a;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        color: #888;
-    }
-
-    .menu-icon:hover {
-        background: #1a1a1a;
-    }
-
-    .indicators-btn {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 16px;
-        background: transparent;
-        border: none;
-        color: #888;
+    .symbol {
         font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-    }
-
-    .indicators-btn:hover {
-        color: #fff;
-    }
-
-    .top-bar-spacer {
-        flex: 1;
-    }
-
-    .grid-btn, .settings-btn {
-        width: 40px;
-        height: 40px;
-        background: #ff6b35;
-        border: none;
-        border-radius: 6px;
-        color: #fff;
-        font-size: 18px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .settings-btn {
-        background: transparent;
-        border: 2px solid #2a2a2a;
-        color: #888;
-    }
-
-    /* Symbol Header */
-    .symbol-header {
-        height: 70px;
-        background: #0a0a0a;
-        border-bottom: 1px solid #1a1a1a;
-        display: flex;
-        align-items: center;
-        padding: 0 20px;
-        gap: 16px;
-    }
-
-    .symbol-badge {
-        background: #1a1a1a;
-        padding: 8px 14px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .exchange-logo {
-        width: 24px;
-        height: 24px;
-        background: #fff;
-        border-radius: 50%;
-    }
-
-    .symbol-name {
-        font-size: 16px;
         font-weight: 700;
         color: #fff;
     }
 
-    .symbol-type {
-        font-size: 11px;
-        color: #888;
-    }
-
-    .timeframe-group {
+    .timeframe-btns {
         display: flex;
         gap: 4px;
         background: #1a1a1a;
-        padding: 4px;
-        border-radius: 8px;
+        padding: 3px;
+        border-radius: 6px;
     }
 
     .tf-btn {
-        padding: 8px 14px;
+        padding: 5px 10px;
         background: transparent;
         border: none;
         color: #888;
-        font-size: 13px;
+        font-size: 11px;
         font-weight: 600;
-        cursor: pointer;
-        border-radius: 6px;
-        transition: all 0.2s;
+        border-radius: 4px;
     }
 
     .tf-btn.active {
@@ -152,88 +64,37 @@
         color: #fff;
     }
 
-    .tf-btn:hover:not(.active) {
-        background: #2a2a2a;
-    }
-
-    .expand-icon {
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #888;
-        cursor: pointer;
-    }
-
-    .current-price {
-        font-size: 18px;
-        font-weight: 700;
-        color: #fff;
+    .price-display {
         margin-left: auto;
+        font-size: 14px;
+        font-weight: 700;
+        color: #10b981;
     }
 
-    /* Main Container */
-    .main-container {
-        height: calc(100vh - 130px);
-        display: flex;
+    .status {
+        position: fixed;
+        top: 55px;
+        right: 12px;
+        padding: 4px 8px;
+        background: rgba(16, 185, 129, 0.2);
+        border: 1px solid rgba(16, 185, 129, 0.4);
+        border-radius: 4px;
+        font-size: 10px;
+        color: #10b981;
+        z-index: 1000;
     }
 
-    /* Left Toolbar */
-    .left-toolbar {
-        width: 60px;
-        background: #0a0a0a;
-        border-right: 1px solid #1a1a1a;
-        display: flex;
-        flex-direction: column;
-        padding: 12px 8px;
-        gap: 8px;
-    }
-
-    .tool-icon {
-        width: 44px;
-        height: 44px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: transparent;
-        border: none;
-        color: #888;
-        font-size: 20px;
-        cursor: pointer;
-        border-radius: 8px;
-        transition: all 0.2s;
-    }
-
-    .tool-icon:hover {
-        background: #1a1a1a;
-    }
-
-    .tool-icon.active {
-        background: #2563eb;
-        color: #fff;
-    }
-
-    /* Chart Area */
-    .chart-area {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        background: #000000;
+    .chart-container {
+        height: calc(100vh - 50px - 40px - 180px);
         position: relative;
-    }
-
-    .chart-canvas-wrapper {
-        flex: 1;
-        position: relative;
+        background: #000;
     }
 
     canvas {
         display: block;
-        cursor: crosshair;
+        touch-action: none;
     }
 
-    /* CVD Bar */
     .cvd-bar {
         height: 40px;
         background: #0a0a0a;
@@ -241,771 +102,343 @@
         border-bottom: 1px solid #1a1a1a;
         display: flex;
         align-items: center;
-        padding: 0 20px;
-        gap: 40px;
+        padding: 0 12px;
+        gap: 16px;
+        overflow-x: auto;
     }
 
     .cvd-label {
-        font-size: 12px;
+        font-size: 11px;
         color: #888;
         font-weight: 600;
     }
 
-    .cvd-values {
-        display: flex;
-        gap: 30px;
-    }
-
     .cvd-value {
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 700;
+        white-space: nowrap;
     }
 
-    .cvd-value.positive {
+    .cvd-value.pos {
         color: #10b981;
     }
 
-    .cvd-value.negative {
+    .cvd-value.neg {
         color: #ef4444;
     }
 
-    /* Footprint Stats Bar */
-    .footprint-bar {
-        height: 200px;
-        background: linear-gradient(to top, #0a0a0a 0%, rgba(10, 10, 10, 0.95) 70%, transparent 100%);
+    .fp-bar {
+        height: 180px;
+        background: #0a0a0a;
         border-top: 1px solid #1a1a1a;
         display: flex;
         overflow-x: auto;
         overflow-y: hidden;
-        position: relative;
     }
 
-    .footprint-bar::-webkit-scrollbar {
-        height: 6px;
+    .fp-bar::-webkit-scrollbar {
+        display: none;
     }
 
-    .footprint-bar::-webkit-scrollbar-track {
-        background: #0a0a0a;
-    }
-
-    .footprint-bar::-webkit-scrollbar-thumb {
-        background: #2a2a2a;
-        border-radius: 3px;
-    }
-
-    .fp-column {
-        min-width: 140px;
-        max-width: 140px;
+    .fp-col {
+        min-width: 100px;
         flex-shrink: 0;
         border-right: 1px solid #1a1a1a;
         display: flex;
         flex-direction: column;
     }
 
-    .fp-title-row {
-        height: 40px;
+    .fp-time {
+        height: 35px;
         display: flex;
         align-items: center;
         justify-content: center;
         border-bottom: 1px solid #1a1a1a;
-        background: rgba(26, 26, 26, 0.5);
-    }
-
-    .fp-title {
-        font-size: 11px;
+        font-size: 10px;
         color: #888;
         font-weight: 600;
     }
 
-    .fp-stats-grid {
+    .fp-grid {
         flex: 1;
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr 1fr;
         gap: 1px;
         background: #1a1a1a;
         padding: 1px;
     }
 
-    .fp-stat-cell {
+    .fp-cell {
         background: #0a0a0a;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 8px;
+        padding: 6px;
     }
 
-    .fp-stat-value {
-        font-size: 16px;
+    .fp-val {
+        font-size: 13px;
         font-weight: 700;
     }
 
-    .fp-stat-value.positive {
+    .fp-val.pos {
         color: #10b981;
     }
 
-    .fp-stat-value.negative {
+    .fp-val.neg {
         color: #ef4444;
     }
 
-    .fp-stat-label {
-        font-size: 9px;
+    .fp-lbl {
+        font-size: 8px;
         color: #888;
         margin-top: 2px;
     }
 
-    /* Right Price Scale */
-    .price-scale {
-        position: absolute;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        width: 80px;
-        pointer-events: none;
-    }
-
-    .current-price-label {
-        position: absolute;
-        right: 0;
-        background: #fbbf24;
-        color: #000;
-        padding: 4px 8px;
-        font-size: 12px;
-        font-weight: 700;
-        border-radius: 4px 0 0 4px;
-    }
-
-    /* Connection Status */
-    .status-indicator {
+    .loading {
         position: fixed;
-        top: 70px;
-        right: 20px;
-        padding: 6px 12px;
-        background: rgba(16, 185, 129, 0.15);
-        border: 1px solid rgba(16, 185, 129, 0.4);
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        z-index: 1000;
-    }
-
-    .status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #10b981;
-        animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-        0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(16, 185, 129, 0.8); }
-        50% { opacity: 0.6; box-shadow: 0 0 4px rgba(16, 185, 129, 0.4); }
-    }
-
-    .status-text {
-        font-size: 11px;
-        color: #10b981;
-        font-weight: 600;
-    }
-
-    /* Mobile Responsive */
-    @media (max-width: 768px) {
-        .top-bar {
-            padding: 0 8px;
-            gap: 8px;
-            height: 50px;
-        }
-        
-        .menu-icon {
-            width: 36px;
-            height: 36px;
-            font-size: 16px;
-        }
-        
-        .indicators-btn {
-            font-size: 12px;
-            padding: 6px 10px;
-        }
-        
-        .grid-btn, .settings-btn {
-            width: 36px;
-            height: 36px;
-            font-size: 16px;
-        }
-        
-        .symbol-header {
-            padding: 0 8px;
-            gap: 8px;
-            height: 60px;
-            flex-wrap: wrap;
-        }
-        
-        .symbol-badge {
-            padding: 6px 10px;
-            font-size: 11px;
-        }
-        
-        .exchange-logo {
-            width: 20px;
-            height: 20px;
-        }
-        
-        .symbol-name {
-            font-size: 14px;
-        }
-        
-        .symbol-type {
-            font-size: 10px;
-        }
-        
-        .timeframe-group {
-            gap: 2px;
-            padding: 3px;
-        }
-        
-        .tf-btn {
-            padding: 6px 10px;
-            font-size: 11px;
-        }
-        
-        .expand-icon {
-            display: none;
-        }
-        
-        .current-price {
-            font-size: 16px;
-            width: 100%;
-            text-align: center;
-            margin-left: 0;
-            margin-top: 4px;
-        }
-        
-        .main-container {
-            height: calc(100vh - 110px);
-        }
-        
-        .left-toolbar {
-            width: 50px;
-            padding: 8px 4px;
-            gap: 4px;
-        }
-        
-        .tool-icon {
-            width: 42px;
-            height: 42px;
-            font-size: 18px;
-        }
-        
-        .cvd-bar {
-            height: 35px;
-            padding: 0 8px;
-            gap: 16px;
-            overflow-x: auto;
-        }
-        
-        .cvd-label {
-            font-size: 11px;
-            flex-shrink: 0;
-        }
-        
-        .cvd-values {
-            gap: 12px;
-            flex-wrap: nowrap;
-        }
-        
-        .cvd-value {
-            font-size: 12px;
-            white-space: nowrap;
-        }
-        
-        .footprint-bar {
-            height: 160px;
-        }
-        
-        .fp-column {
-            min-width: 110px;
-            max-width: 110px;
-        }
-        
-        .fp-title-row {
-            height: 35px;
-        }
-        
-        .fp-title {
-            font-size: 10px;
-        }
-        
-        .fp-stat-cell {
-            padding: 6px 4px;
-        }
-        
-        .fp-stat-value {
-            font-size: 13px;
-        }
-        
-        .fp-stat-label {
-            font-size: 8px;
-        }
-        
-        .status-indicator {
-            top: 52px;
-            right: 8px;
-            padding: 4px 8px;
-            font-size: 10px;
-        }
-        
-        .status-dot {
-            width: 6px;
-            height: 6px;
-        }
-    }
-
-    /* Extra small mobile */
-    @media (max-width: 480px) {
-        .top-bar {
-            height: 45px;
-            padding: 0 6px;
-            gap: 6px;
-        }
-        
-        .menu-icon {
-            width: 32px;
-            height: 32px;
-            font-size: 14px;
-        }
-        
-        .indicators-btn {
-            display: none;
-        }
-        
-        .grid-btn, .settings-btn {
-            width: 32px;
-            height: 32px;
-            font-size: 14px;
-        }
-        
-        .symbol-header {
-            height: 55px;
-            padding: 0 6px;
-        }
-        
-        .symbol-badge {
-            padding: 5px 8px;
-        }
-        
-        .tf-btn {
-            padding: 5px 8px;
-            font-size: 10px;
-        }
-        
-        .current-price {
-            font-size: 14px;
-        }
-        
-        .main-container {
-            height: calc(100vh - 100px);
-        }
-        
-        .left-toolbar {
-            width: 44px;
-        }
-        
-        .tool-icon {
-            width: 38px;
-            height: 38px;
-            font-size: 16px;
-        }
-        
-        .fp-column {
-            min-width: 90px;
-            max-width: 90px;
-        }
-        
-        .fp-stat-value {
-            font-size: 12px;
-        }
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 14px;
+        color: #888;
     }
 </style>
 ```
 
 </head>
 <body>
-    <!-- Top Bar -->
     <div class="top-bar">
-        <div class="menu-icon">☰</div>
-        <button class="indicators-btn">
-            📊 Indicators
-        </button>
-        <div class="top-bar-spacer"></div>
-        <div class="grid-btn">⊞</div>
-        <div class="settings-btn">⚙</div>
-        <div class="menu-icon">⋮</div>
+        <div class="symbol">BTCUSDT</div>
+        <div class="timeframe-btns">
+            <button class="tf-btn" data-tf="60000">1m</button>
+            <button class="tf-btn" data-tf="300000">5m</button>
+            <button class="tf-btn active" data-tf="900000">15m</button>
+            <button class="tf-btn" data-tf="3600000">1h</button>
+        </div>
+        <div class="price-display" id="price">--</div>
     </div>
 
 ```
-<!-- Symbol Header -->
-<div class="symbol-header">
-    <div class="symbol-badge">
-        <div class="exchange-logo"></div>
-        <div>
-            <div class="symbol-type">BYBIT.F</div>
-            <div class="symbol-name">BTCUSDT</div>
-        </div>
-    </div>
-    
-    <div class="timeframe-group">
-        <button class="tf-btn" data-tf="60000">1m</button>
-        <button class="tf-btn" data-tf="300000">5m</button>
-        <button class="tf-btn active" data-tf="900000">15m</button>
-        <button class="tf-btn" data-tf="3600000">1h</button>
-        <button class="tf-btn" data-tf="14400000">4h</button>
-    </div>
-    
-    <div class="expand-icon">▼</div>
-    
-    <div class="current-price" id="currentPrice">88270.30</div>
+<div class="status">🟢 Live</div>
+
+<div class="chart-container">
+    <canvas id="canvas"></canvas>
 </div>
 
-<!-- Connection Status -->
-<div class="status-indicator">
-    <div class="status-dot"></div>
-    <span class="status-text">Live</span>
+<div class="cvd-bar">
+    <span class="cvd-label">CVD</span>
+    <div id="cvdVals"></div>
 </div>
 
-<!-- Main Container -->
-<div class="main-container">
-    <!-- Left Toolbar -->
-    <div class="left-toolbar">
-        <button class="tool-icon active" data-tool="cursor" title="Cursor">⌖</button>
-        <button class="tool-icon" data-tool="line" title="Horizontal Line">―</button>
-        <button class="tool-icon" data-tool="fib" title="Fibonacci">φ</button>
-        <button class="tool-icon" data-tool="trend" title="Trend Line">📈</button>
-    </div>
+<div class="fp-bar" id="fpBar"></div>
 
-    <!-- Chart Area -->
-    <div class="chart-area">
-        <div class="chart-canvas-wrapper">
-            <canvas id="canvas"></canvas>
-        </div>
-
-        <!-- CVD Bar -->
-        <div class="cvd-bar">
-            <span class="cvd-label">CVD</span>
-            <div class="cvd-values" id="cvdValues">
-                <!-- Dynamically populated -->
-            </div>
-        </div>
-
-        <!-- Footprint Stats Bar -->
-        <div class="footprint-bar" id="footprintBar">
-            <!-- Dynamically populated -->
-        </div>
-    </div>
-</div>
+<div class="loading" id="loading">Connecting...</div>
 
 <script>
-    // Global error handler
-    window.onerror = function(message, source, lineno, colno, error) {
-        console.error('❌ ERROR:', message, 'at', lineno + ':' + colno);
-        return false;
-    };
-
-    // Configuration
-    const CONFIG = {
-        candleWidth: 60,  // Reduced from 100 for better mobile fit
-        candleGap: 8,     // Reduced from 20 for better mobile fit
-        tickSize: 1.0,
+    // Config
+    const CFG = {
+        cw: 40,  // Candle width
+        gap: 4,   // Gap
         colors: {
-            bg: '#000000',
+            bg: '#000',
             grid: '#1a1a1a',
-            bullCandle: '#b8860b',
-            bearCandle: '#cd853f',
+            bull: '#b8860b',
+            bear: '#cd853f',
             bullBorder: '#daa520',
             bearBorder: '#d2691e',
-            currentCandle: '#fbbf24',
-            bidVol: '#b8860b',
-            askVol: '#cd853f',
+            current: '#fbbf24',
             text: '#888'
         }
     };
 
     // State
     let candles = [];
-    let currentCandle = null;
-    let candleInterval = 15 * 60 * 1000; // 15 minutes
-    let candleStartTime = alignToTimeframe(Date.now(), candleInterval);
-    
-    // Auto-detect mobile and set appropriate initial zoom
-    const isMobile = window.innerWidth < 768;
-    let zoomLevel = isMobile ? 0.4 : 1;
-    let scrollOffset = 0;
+    let current = null;
+    let interval = 15 * 60 * 1000;
+    let startTime = align(Date.now(), interval);
+    let zoom = 1;
+    let scroll = 0;
     let socket = null;
-    let isConnected = false;
+    let connected = false;
 
     // Canvas
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
-    function resizeCanvas() {
-        const container = canvas.parentElement;
+    function resize() {
         const dpr = window.devicePixelRatio || 1;
-        canvas.width = container.clientWidth * dpr;
-        canvas.height = container.clientHeight * dpr;
-        canvas.style.width = container.clientWidth + 'px';
-        canvas.style.height = container.clientHeight + 'px';
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
         ctx.scale(dpr, dpr);
         draw();
     }
 
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
+    window.addEventListener('resize', resize);
+    resize();
 
-    // Time alignment
-    function alignToTimeframe(timestamp, interval) {
-        const date = new Date(timestamp);
-        if (interval >= 3600000) {
-            const hours = date.getHours();
-            const intervalHours = interval / 3600000;
-            const alignedHours = Math.floor(hours / intervalHours) * intervalHours;
-            date.setHours(alignedHours, 0, 0, 0);
-        } else {
-            const minutes = date.getMinutes();
-            const intervalMinutes = interval / 60000;
-            const alignedMinutes = Math.floor(minutes / intervalMinutes) * intervalMinutes;
-            date.setMinutes(alignedMinutes, 0, 0);
-        }
-        return date.getTime();
+    function align(ts, int) {
+        const d = new Date(ts);
+        const m = d.getMinutes();
+        const im = int / 60000;
+        const am = Math.floor(m / im) * im;
+        d.setMinutes(am, 0, 0);
+        return d.getTime();
     }
 
-    // Bybit Connection
-    function connectToBybit() {
-        try {
-            console.log('🔌 Connecting to Bybit...');
-            socket = new WebSocket('wss://stream.bybit.com/v5/public/linear');
-            
-            socket.onopen = () => {
-                console.log('✅ Connected to Bybit');
-                isConnected = true;
-                
-                socket.send(JSON.stringify({
-                    op: 'subscribe',
-                    args: ['publicTrade.BTCUSDT', 'orderbook.50.BTCUSDT']
-                }));
-            };
-            
-            socket.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    
-                    if (data.success) {
-                        console.log('✅ Subscription confirmed');
-                        return;
-                    }
-                    
-                    if (data.topic && data.topic.includes('publicTrade')) {
-                        processTradeData(data);
-                    }
-                } catch (e) {
-                    console.error('Parse error:', e);
-                }
-            };
-            
-            socket.onerror = (e) => {
-                console.error('❌ WebSocket error:', e);
-                isConnected = false;
-            };
-            
-            socket.onclose = (e) => {
-                console.log('⚠️ Connection closed, reconnecting...');
-                isConnected = false;
-                setTimeout(connectToBybit, 5000);
-            };
-        } catch (error) {
-            console.error('❌ Connection failed:', error);
-        }
-    }
-
-    function processTradeData(message) {
-        if (!message.data || message.data.length === 0) return;
+    // Connect
+    function connect() {
+        console.log('Connecting...');
+        socket = new WebSocket('wss://stream.bybit.com/v5/public/linear');
         
-        message.data.forEach(trade => {
-            const price = parseFloat(trade.p);
-            const qty = parseFloat(trade.v);
-            const isSell = trade.S === 'Sell';
-            
-            if (!currentCandle) {
-                currentCandle = createNewCandle(price);
+        socket.onopen = () => {
+            console.log('Connected');
+            connected = true;
+            document.getElementById('loading').style.display = 'none';
+            socket.send(JSON.stringify({
+                op: 'subscribe',
+                args: ['publicTrade.BTCUSDT']
+            }));
+        };
+        
+        socket.onmessage = (e) => {
+            const data = JSON.parse(e.data);
+            if (data.topic && data.topic.includes('publicTrade')) {
+                process(data);
             }
-            
-            currentCandle.h = Math.max(currentCandle.h, price);
-            currentCandle.l = Math.min(currentCandle.l, price);
-            currentCandle.c = price;
-            currentCandle.v += qty;
-            
-            const priceKey = price.toFixed(2);
-            if (!currentCandle.fp[priceKey]) {
-                currentCandle.fp[priceKey] = { b: 0, a: 0 };
-            }
-            
-            if (isSell) {
-                currentCandle.fp[priceKey].b += qty;
-            } else {
-                currentCandle.fp[priceKey].a += qty;
-            }
-            
-            updatePriceDisplay(price);
-            draw();
-            updateFootprintBar();
-            updateCVDBar();
-        });
+        };
         
-        // Auto-fit view on first few candles for mobile
-        if (candles.length <= 3 && window.innerWidth < 768) {
-            autoFitView();
-        }
-    }
-
-    function autoFitView() {
-        const w = canvas.width / (window.devicePixelRatio || 1);
-        const allCandles = [...candles];
-        if (currentCandle) allCandles.push(currentCandle);
+        socket.onerror = () => {
+            connected = false;
+        };
         
-        if (allCandles.length === 0) return;
-        
-        const candleW = CONFIG.candleWidth * zoomLevel;
-        const gap = CONFIG.candleGap * zoomLevel;
-        const totalWidth = allCandles.length * (candleW + gap);
-        const priceScaleWidth = w < 480 ? 50 : (w < 768 ? 55 : 70);
-        const chartWidth = w - priceScaleWidth;
-        
-        // Auto-scroll to show all candles
-        if (totalWidth < chartWidth) {
-            scrollOffset = 0;
-        } else {
-            scrollOffset = chartWidth - totalWidth;
-        }
-        
-        draw();
-        console.log('📐 Auto-fitted view for mobile');
-    }
-
-    function createNewCandle(price) {
-        const alignedTime = alignToTimeframe(Date.now(), candleInterval);
-        return {
-            t: alignedTime,
-            o: price,
-            h: price,
-            l: price,
-            c: price,
-            v: 0,
-            fp: {}
+        socket.onclose = () => {
+            connected = false;
+            setTimeout(connect, 3000);
         };
     }
 
-    function checkCandleInterval() {
-        const now = Date.now();
-        const currentAlignedTime = alignToTimeframe(now, candleInterval);
+    function process(msg) {
+        if (!msg.data || msg.data.length === 0) return;
         
-        if (currentAlignedTime > candleStartTime && currentCandle) {
-            candles.push(currentCandle);
-            if (candles.length > 200) {
-                candles.shift();
+        msg.data.forEach(t => {
+            const p = parseFloat(t.p);
+            const q = parseFloat(t.v);
+            const sell = t.S === 'Sell';
+            
+            if (!current) {
+                current = {
+                    t: align(Date.now(), interval),
+                    o: p, h: p, l: p, c: p, v: 0, fp: {}
+                };
             }
-            currentCandle = null;
-            candleStartTime = currentAlignedTime;
+            
+            current.h = Math.max(current.h, p);
+            current.l = Math.min(current.l, p);
+            current.c = p;
+            current.v += q;
+            
+            const k = p.toFixed(2);
+            if (!current.fp[k]) current.fp[k] = { b: 0, a: 0 };
+            
+            if (sell) {
+                current.fp[k].b += q;
+            } else {
+                current.fp[k].a += q;
+            }
+            
+            document.getElementById('price').textContent = '$' + p.toFixed(2);
+            draw();
+            updateFP();
+            updateCVD();
+        });
+    }
+
+    function checkInterval() {
+        const now = Date.now();
+        const curr = align(now, interval);
+        
+        if (curr > startTime && current) {
+            candles.push(current);
+            if (candles.length > 100) candles.shift();
+            current = null;
+            startTime = curr;
         }
     }
-    setInterval(checkCandleInterval, 1000);
+    setInterval(checkInterval, 1000);
 
-    function updatePriceDisplay(price) {
-        document.getElementById('currentPrice').textContent = price.toFixed(2);
-    }
-
-    // Drawing
+    // Draw
     function draw() {
         const w = canvas.width / (window.devicePixelRatio || 1);
         const h = canvas.height / (window.devicePixelRatio || 1);
 
-        ctx.fillStyle = CONFIG.colors.bg;
+        ctx.fillStyle = CFG.colors.bg;
         ctx.fillRect(0, 0, w, h);
 
-        const allCandles = [...candles];
-        if (currentCandle) allCandles.push(currentCandle);
+        const all = [...candles];
+        if (current) all.push(current);
 
-        if (allCandles.length === 0) return;
+        if (all.length === 0) return;
 
-        // Calculate price range
-        let minPrice = Infinity;
-        let maxPrice = -Infinity;
-
-        allCandles.forEach(c => {
-            minPrice = Math.min(minPrice, c.l);
-            maxPrice = Math.max(maxPrice, c.h);
+        let minP = Infinity, maxP = -Infinity;
+        all.forEach(c => {
+            minP = Math.min(minP, c.l);
+            maxP = Math.max(maxP, c.h);
         });
 
-        const padding = (maxPrice - minPrice) * 0.1;
-        minPrice -= padding;
-        maxPrice += padding;
+        const pad = (maxP - minP) * 0.1;
+        minP -= pad;
+        maxP += pad;
 
-        // Price scale width based on screen size
-        const priceScaleWidth = w < 480 ? 50 : (w < 768 ? 55 : 70);
-        
         // Grid
-        drawGrid(w, h, minPrice, maxPrice, priceScaleWidth);
+        ctx.strokeStyle = CFG.colors.grid;
+        ctx.lineWidth = 1;
+        const step = 50;
+        const sp = Math.floor(minP / step) * step;
+        for (let p = sp; p <= maxP; p += step) {
+            const y = h - ((p - minP) / (maxP - minP)) * h;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(w - 50, y);
+            ctx.stroke();
+        }
 
-        // Calculate candle dimensions
-        const candleW = CONFIG.candleWidth * zoomLevel;
-        const gap = CONFIG.candleGap * zoomLevel;
-        const totalWidth = allCandles.length * (candleW + gap);
-        const chartWidth = w - priceScaleWidth;
-        const startX = chartWidth - totalWidth + scrollOffset;
+        // Candles
+        const cw = CFG.cw * zoom;
+        const gap = CFG.gap * zoom;
+        const tw = all.length * (cw + gap);
+        const sx = w - tw - 50 + scroll;
 
-        // Draw candles
-        allCandles.forEach((candle, i) => {
-            const x = startX + i * (candleW + gap);
-            if (x + candleW < -10 || x > chartWidth + 10) return;
-            drawCandle(candle, x, candleW, h, minPrice, maxPrice, i === allCandles.length - 1);
+        all.forEach((c, i) => {
+            const x = sx + i * (cw + gap);
+            if (x + cw < 0 || x > w - 50) return;
+            drawCandle(c, x, cw, h, minP, maxP, i === all.length - 1);
         });
 
         // Price scale
-        drawPriceScale(w, h, minPrice, maxPrice, priceScaleWidth);
-    }
-
-    function drawGrid(w, h, minPrice, maxPrice, priceScaleWidth) {
-        const chartWidth = w - priceScaleWidth;
-        
-        ctx.strokeStyle = CONFIG.colors.grid;
-        ctx.lineWidth = 1;
-
-        const step = 50;
-        const startPrice = Math.floor(minPrice / step) * step;
-
-        for (let p = startPrice; p <= maxPrice; p += step) {
-            const y = h - ((p - minPrice) / (maxPrice - minPrice)) * h;
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(chartWidth, y);
-            ctx.stroke();
+        ctx.fillStyle = CFG.colors.bg;
+        ctx.fillRect(w - 50, 0, 50, h);
+        ctx.font = '9px monospace';
+        ctx.fillStyle = CFG.colors.text;
+        ctx.textAlign = 'left';
+        for (let p = sp; p <= maxP; p += step) {
+            const y = h - ((p - minP) / (maxP - minP)) * h;
+            ctx.fillText(p.toFixed(0), w - 46, y + 3);
         }
     }
 
-    function drawCandle(c, x, w, h, minPrice, maxPrice, isCurrent) {
-        const priceToY = (price) => {
-            return h - ((price - minPrice) / (maxPrice - minPrice)) * h;
-        };
-
-        const oy = priceToY(c.o);
-        const cy = priceToY(c.c);
-        const hy = priceToY(c.h);
-        const ly = priceToY(c.l);
-
-        const isGreen = c.c >= c.o;
-        const borderColor = isCurrent ? CONFIG.colors.currentCandle : (isGreen ? CONFIG.colors.bullBorder : CONFIG.colors.bearBorder);
-        const bodyColor = isGreen ? CONFIG.colors.bullCandle : CONFIG.colors.bearCandle;
+    function drawCandle(c, x, w, h, minP, maxP, curr) {
+        const py = p => h - ((p - minP) / (maxP - minP)) * h;
+        const oy = py(c.o), cy = py(c.c), hy = py(c.h), ly = py(c.l);
+        const green = c.c >= c.o;
+        const col = curr ? CFG.colors.current : (green ? CFG.colors.bullBorder : CFG.colors.bearBorder);
 
         // Wick
-        ctx.strokeStyle = borderColor;
+        ctx.strokeStyle = col;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(x + w/2, hy);
@@ -1014,401 +447,211 @@
 
         // Body
         const top = Math.min(oy, cy);
-        const bodyH = Math.abs(cy - oy) || 2;
-
-        ctx.fillStyle = bodyColor;
-        ctx.fillRect(x + 2, top, w - 4, bodyH);
-
-        ctx.strokeStyle = borderColor;
-        ctx.lineWidth = isCurrent ? 3 : 2;
-        ctx.strokeRect(x + 2, top, w - 4, bodyH);
+        const bh = Math.abs(cy - oy) || 2;
+        ctx.fillStyle = green ? CFG.colors.bull : CFG.colors.bear;
+        ctx.fillRect(x, top, w, bh);
+        ctx.strokeStyle = col;
+        ctx.lineWidth = curr ? 3 : 2;
+        ctx.strokeRect(x, top, w, bh);
 
         // Footprint
-        if (w > 80) {
-            drawFootprintInside(c, x, w, h, minPrice, maxPrice);
-        }
-    }
-
-    function drawFootprintInside(candle, x, w, h, minPrice, maxPrice) {
-        if (!candle.fp || typeof candle.fp !== 'object') {
-            return;
-        }
-        
-        // Always show footprint if candle is wide enough (lower threshold for mobile)
-        const minWidth = 20; // Very low threshold - almost always show
-        if (w < minWidth) return;
-        
-        const prices = Object.keys(candle.fp).map(p => parseFloat(p)).sort((a, b) => b - a);
-        
-        if (prices.length === 0) {
-            return;
-        }
-        
-        // Smaller font on mobile
-        const fontSize = window.innerWidth < 480 ? 8 : (window.innerWidth < 768 ? 9 : 10);
-        ctx.font = `${fontSize}px monospace`;
-        ctx.fontWeight = 'normal';
-        
-        prices.forEach(price => {
-            const key = price.toFixed(2);
-            const fp = candle.fp[key];
-            if (!fp || typeof fp !== 'object') return;
+        if (w > 25 && c.fp) {
+            const ps = Object.keys(c.fp).map(p => parseFloat(p)).sort((a, b) => b - a);
+            ctx.font = '8px monospace';
             
-            const y = h - ((price - minPrice) / (maxPrice - minPrice)) * h;
-
-            // Skip if outside candle range
-            if (price < candle.l || price > candle.h) return;
-
-            const bidVol = fp.b || 0;
-            const askVol = fp.a || 0;
-            
-            if (bidVol === 0 && askVol === 0) return;
-
-            const ratio = bidVol / Math.max(askVol, 0.01);
-            const isImbalance = ratio > 1.5 || ratio < (1/1.5);
-
-            const padding = 2;
-            const textOffset = 3;
-
-            // Bid (left side)
-            if (bidVol > 0) {
-                const color = isImbalance && bidVol > askVol ? '#fbbf24' : CONFIG.colors.bidVol;
-                const bg = isImbalance && bidVol > askVol ? 'rgba(251, 191, 36, 0.2)' : 'transparent';
+            ps.forEach(price => {
+                const k = price.toFixed(2);
+                const fp = c.fp[k];
+                if (!fp) return;
                 
-                if (bg !== 'transparent' && w > 40) {
-                    ctx.fillStyle = bg;
-                    ctx.fillRect(x + padding, y - 6, w/2 - padding * 2, 12);
+                const y = py(price);
+                if (price < c.l || price > c.h) return;
+
+                const b = fp.b || 0;
+                const a = fp.a || 0;
+                if (b === 0 && a === 0) return;
+
+                const ratio = b / Math.max(a, 0.01);
+                const imb = ratio > 1.5 || ratio < 0.67;
+
+                if (b > 0) {
+                    ctx.fillStyle = imb && b > a ? '#fbbf24' : CFG.colors.bull;
+                    ctx.textAlign = 'left';
+                    ctx.fillText(Math.round(b), x + 2, y + 3);
                 }
-                
-                ctx.fillStyle = color;
-                ctx.textAlign = 'left';
-                ctx.font = isImbalance && bidVol > askVol ? `bold ${fontSize}px monospace` : `${fontSize}px monospace`;
-                ctx.fillText(Math.round(bidVol), x + textOffset, y + 3);
-            }
 
-            // Ask (right side)
-            if (askVol > 0) {
-                const color = isImbalance && askVol > bidVol ? '#ef8b5f' : CONFIG.colors.askVol;
-                const bg = isImbalance && askVol > bidVol ? 'rgba(239, 139, 95, 0.2)' : 'transparent';
-                
-                if (bg !== 'transparent' && w > 40) {
-                    ctx.fillStyle = bg;
-                    ctx.fillRect(x + w/2 + padding/2, y - 6, w/2 - padding * 2, 12);
+                if (a > 0) {
+                    ctx.fillStyle = imb && a > b ? '#ef8b5f' : CFG.colors.bear;
+                    ctx.textAlign = 'right';
+                    ctx.fillText(Math.round(a), x + w - 2, y + 3);
                 }
-                
-                ctx.fillStyle = color;
-                ctx.textAlign = 'right';
-                ctx.font = isImbalance && askVol > bidVol ? `bold ${fontSize}px monospace` : `${fontSize}px monospace`;
-                ctx.fillText(Math.round(askVol), x + w - textOffset, y + 3);
-            }
-        });
-    }
-
-    function drawPriceScale(w, h, minPrice, maxPrice, priceScaleWidth) {
-        const scaleX = w - priceScaleWidth;
-        
-        ctx.fillStyle = CONFIG.colors.bg;
-        ctx.fillRect(scaleX, 0, priceScaleWidth, h);
-
-        const fontSize = w < 480 ? 9 : (w < 768 ? 10 : 11);
-        ctx.font = `${fontSize}px monospace`;
-        ctx.fillStyle = CONFIG.colors.text;
-        ctx.textAlign = 'left';
-
-        const step = 50;
-        const startPrice = Math.floor(minPrice / step) * step;
-
-        for (let p = startPrice; p <= maxPrice; p += step) {
-            const y = h - ((p - minPrice) / (maxPrice - minPrice)) * h;
-            const textX = scaleX + (w < 768 ? 4 : 8);
-            ctx.fillText(p.toFixed(0), textX, y + 4);
+            });
         }
     }
 
-    function updateFootprintBar() {
-        const container = document.getElementById('footprintBar');
-        if (!container) {
-            console.error('Footprint container not found');
-            return;
-        }
-        
-        const allCandles = [...candles];
-        if (currentCandle) allCandles.push(currentCandle);
-
-        if (allCandles.length === 0) {
-            container.innerHTML = '<div style="padding: 20px; color: #888; text-align: center;">Waiting for candle data...</div>';
-            return;
-        }
+    function updateFP() {
+        const bar = document.getElementById('fpBar');
+        const all = [...candles];
+        if (current) all.push(current);
 
         let html = '';
-        const displayCandles = allCandles.slice(-10); // Last 10 candles
-        
-        displayCandles.forEach((candle, idx) => {
-            let bidVol = 0, askVol = 0;
-            
-            if (candle.fp && typeof candle.fp === 'object') {
-                Object.values(candle.fp).forEach(fp => {
-                    if (fp && typeof fp === 'object') {
-                        bidVol += fp.b || 0;
-                        askVol += fp.a || 0;
-                    }
+        all.slice(-10).forEach(c => {
+            let b = 0, a = 0;
+            if (c.fp) {
+                Object.values(c.fp).forEach(f => {
+                    b += f.b || 0;
+                    a += f.a || 0;
                 });
             }
 
-            const delta = bidVol - askVol;
-            const volume = candle.v || 0;
-            const deltaClass = delta >= 0 ? 'positive' : 'negative';
-
-            const time = new Date(candle.t).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const d = b - a;
+            const v = c.v || 0;
+            const t = new Date(c.t).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
 
             html += `
-                <div class="fp-column">
-                    <div class="fp-title-row">
-                        <span class="fp-title">${time}</span>
-                    </div>
-                    <div class="fp-stats-grid">
-                        <div class="fp-stat-cell">
-                            <div class="fp-stat-value">${formatVolume(volume)}</div>
-                            <div class="fp-stat-label">Vol</div>
+                <div class="fp-col">
+                    <div class="fp-time">${t}</div>
+                    <div class="fp-grid">
+                        <div class="fp-cell">
+                            <div class="fp-val">${fmt(v)}</div>
+                            <div class="fp-lbl">Vol</div>
                         </div>
-                        <div class="fp-stat-cell">
-                            <div class="fp-stat-value ${deltaClass}">${delta >= 0 ? '+' : ''}${formatVolume(delta)}</div>
-                            <div class="fp-stat-label">Δ</div>
+                        <div class="fp-cell">
+                            <div class="fp-val ${d >= 0 ? 'pos' : 'neg'}">${d >= 0 ? '+' : ''}${fmt(d)}</div>
+                            <div class="fp-lbl">Δ</div>
                         </div>
-                        <div class="fp-stat-cell">
-                            <div class="fp-stat-value">${formatVolume(bidVol)}</div>
-                            <div class="fp-stat-label">Bid Vol</div>
+                        <div class="fp-cell">
+                            <div class="fp-val">${fmt(b)}</div>
+                            <div class="fp-lbl">Bid</div>
                         </div>
-                        <div class="fp-stat-cell">
-                            <div class="fp-stat-value">${formatVolume(askVol)}</div>
-                            <div class="fp-stat-label">Ask Vol</div>
+                        <div class="fp-cell">
+                            <div class="fp-val">${fmt(a)}</div>
+                            <div class="fp-lbl">Ask</div>
                         </div>
                     </div>
                 </div>
             `;
         });
 
-        container.innerHTML = html;
-        console.log(`✅ Updated footprint bar with ${displayCandles.length} candles`);
+        bar.innerHTML = html;
     }
 
-    function updateCVDBar() {
-        const container = document.getElementById('cvdValues');
-        if (!container) {
-            console.error('CVD container not found');
-            return;
-        }
-        
-        const allCandles = [...candles];
-        if (currentCandle) allCandles.push(currentCandle);
+    function updateCVD() {
+        const el = document.getElementById('cvdVals');
+        const all = [...candles];
+        if (current) all.push(current);
 
-        if (allCandles.length === 0) {
-            container.innerHTML = '<div class="cvd-value">0</div>';
-            return;
-        }
-
-        let runningCVD = 0;
+        let cvd = 0;
         let html = '';
-        
-        const displayCandles = allCandles.slice(-5); // Last 5 values
-        
-        displayCandles.forEach((candle, idx) => {
-            let bidVol = 0, askVol = 0;
-            
-            if (candle.fp && typeof candle.fp === 'object') {
-                Object.values(candle.fp).forEach(fp => {
-                    if (fp && typeof fp === 'object') {
-                        bidVol += fp.b || 0;
-                        askVol += fp.a || 0;
-                    }
+        all.slice(-5).forEach(c => {
+            let b = 0, a = 0;
+            if (c.fp) {
+                Object.values(c.fp).forEach(f => {
+                    b += f.b || 0;
+                    a += f.a || 0;
                 });
             }
-
-            const delta = bidVol - askVol;
-            runningCVD += delta;
-            const cvdClass = runningCVD >= 0 ? 'positive' : 'negative';
-
-            html += `<div class="cvd-value ${cvdClass}">${runningCVD >= 0 ? '+' : ''}${formatVolume(runningCVD)}</div>`;
+            cvd += b - a;
+            html += `<span class="cvd-value ${cvd >= 0 ? 'pos' : 'neg'}">${cvd >= 0 ? '+' : ''}${fmt(cvd)}</span>`;
         });
 
-        container.innerHTML = html;
-        console.log(`✅ Updated CVD bar with ${displayCandles.length} values, CVD: ${runningCVD.toFixed(2)}`);
+        el.innerHTML = html;
     }
 
-    function formatVolume(vol) {
-        if (Math.abs(vol) >= 1000000) {
-            return (vol / 1000000).toFixed(1) + 'M';
-        } else if (Math.abs(vol) >= 1000) {
-            return (vol / 1000).toFixed(0) + 'K';
-        }
-        return vol.toFixed(2);
+    function fmt(n) {
+        if (Math.abs(n) >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+        if (Math.abs(n) >= 1000) return (n / 1000).toFixed(0) + 'K';
+        return n.toFixed(2);
     }
 
-    // Controls
-    let isDragging = false;
+    // Touch
+    let drag = false;
     let lastX = 0;
-    let lastY = 0;
-    let velocityX = 0;
-    let isCoasting = false;
+    let vel = 0;
+    let coast = false;
 
-    // Mouse controls
-    canvas.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        lastX = e.clientX;
-        velocityX = 0;
-        isCoasting = false;
-    });
-
-    canvas.addEventListener('mousemove', (e) => {
-        if (isDragging) {
-            const dx = e.clientX - lastX;
-            scrollOffset += dx;
-            velocityX = dx;
-            lastX = e.clientX;
-            draw();
-        }
-    });
-
-    canvas.addEventListener('mouseup', () => {
-        if (isDragging && Math.abs(velocityX) > 2) {
-            startCoasting();
-        }
-        isDragging = false;
-    });
-
-    canvas.addEventListener('mouseleave', () => {
-        isDragging = false;
-    });
-
-    // Touch controls for mobile
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let lastTouchX = 0;
-    let lastTouchTime = 0;
-
-    canvas.addEventListener('touchstart', (e) => {
+    canvas.addEventListener('touchstart', e => {
         if (e.touches.length === 1) {
-            isDragging = true;
-            touchStartX = e.touches[0].clientX;
-            lastTouchX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-            lastTouchTime = Date.now();
-            velocityX = 0;
-            isCoasting = false;
+            drag = true;
+            lastX = e.touches[0].clientX;
+            vel = 0;
+            coast = false;
             e.preventDefault();
         }
-    }, { passive: false });
+    }, {passive: false});
 
-    canvas.addEventListener('touchmove', (e) => {
-        if (isDragging && e.touches.length === 1) {
-            const touch = e.touches[0];
-            const dx = touch.clientX - lastTouchX;
-            const now = Date.now();
-            const dt = now - lastTouchTime;
-            
-            scrollOffset += dx;
-            velocityX = dx / Math.max(dt, 1) * 16; // Normalize to 60fps
-            
-            lastTouchX = touch.clientX;
-            lastTouchTime = now;
+    canvas.addEventListener('touchmove', e => {
+        if (drag && e.touches.length === 1) {
+            const dx = e.touches[0].clientX - lastX;
+            scroll += dx;
+            vel = dx;
+            lastX = e.touches[0].clientX;
             draw();
             e.preventDefault();
         }
-    }, { passive: false });
+    }, {passive: false});
 
-    canvas.addEventListener('touchend', (e) => {
-        if (isDragging && Math.abs(velocityX) > 1) {
-            startCoasting();
+    canvas.addEventListener('touchend', e => {
+        if (drag && Math.abs(vel) > 1) {
+            coast = true;
+            requestAnimationFrame(function c() {
+                if (!coast) return;
+                scroll += vel;
+                vel *= 0.92;
+                if (Math.abs(vel) < 0.1) {
+                    coast = false;
+                    return;
+                }
+                draw();
+                requestAnimationFrame(c);
+            });
         }
-        isDragging = false;
+        drag = false;
         e.preventDefault();
-    }, { passive: false });
+    }, {passive: false});
 
-    canvas.addEventListener('touchcancel', () => {
-        isDragging = false;
-        isCoasting = false;
-    });
-
-    // Momentum scrolling
-    function startCoasting() {
-        isCoasting = true;
-        
-        function coast() {
-            if (!isCoasting) return;
-            
-            scrollOffset += velocityX;
-            velocityX *= 0.92; // Friction
-            
-            if (Math.abs(velocityX) < 0.1) {
-                isCoasting = false;
-                return;
-            }
-            
-            draw();
-            requestAnimationFrame(coast);
-        }
-        
-        coast();
-    }
-
-    // Pinch zoom for mobile
-    let lastTouchDistance = 0;
-
-    canvas.addEventListener('touchstart', (e) => {
+    // Pinch zoom
+    let lastDist = 0;
+    canvas.addEventListener('touchstart', e => {
         if (e.touches.length === 2) {
             const dx = e.touches[0].clientX - e.touches[1].clientX;
             const dy = e.touches[0].clientY - e.touches[1].clientY;
-            lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
+            lastDist = Math.sqrt(dx * dx + dy * dy);
             e.preventDefault();
         }
-    }, { passive: false });
+    }, {passive: false});
 
-    canvas.addEventListener('touchmove', (e) => {
+    canvas.addEventListener('touchmove', e => {
         if (e.touches.length === 2) {
             const dx = e.touches[0].clientX - e.touches[1].clientX;
             const dy = e.touches[0].clientY - e.touches[1].clientY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+            const dist = Math.sqrt(dx * dx + dy * dy);
             
-            if (lastTouchDistance > 0) {
-                const delta = distance / lastTouchDistance;
-                zoomLevel = Math.max(0.5, Math.min(3, zoomLevel * delta));
+            if (lastDist > 0) {
+                const delta = dist / lastDist;
+                zoom = Math.max(0.5, Math.min(3, zoom * delta));
                 draw();
             }
             
-            lastTouchDistance = distance;
+            lastDist = dist;
             e.preventDefault();
         }
-    }, { passive: false });
+    }, {passive: false});
 
-    canvas.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? 0.9 : 1.1;
-        zoomLevel = Math.max(0.5, Math.min(3, zoomLevel * delta));
-        draw();
-    }, { passive: false });
-
-    // Timeframe selector
+    // Timeframe
     document.querySelectorAll('.tf-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            candleInterval = parseInt(btn.dataset.tf);
-            candleStartTime = alignToTimeframe(Date.now(), candleInterval);
-            currentCandle = null;
+            interval = parseInt(btn.dataset.tf);
+            startTime = align(Date.now(), interval);
+            current = null;
         });
     });
 
-    // Tool buttons
-    document.querySelectorAll('.tool-icon').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.tool-icon').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        });
-    });
-
-    // Initialize
-    connectToBybit();
-    console.log('🚀 Professional Orderflow Chart Ready');
+    // Init
+    connect();
+    console.log('Ready');
 </script>
 ```
 
