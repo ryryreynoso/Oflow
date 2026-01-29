@@ -412,27 +412,218 @@
     /* Mobile Responsive */
     @media (max-width: 768px) {
         .top-bar {
-            padding: 0 12px;
+            padding: 0 8px;
+            gap: 8px;
+            height: 50px;
+        }
+        
+        .menu-icon {
+            width: 36px;
+            height: 36px;
+            font-size: 16px;
+        }
+        
+        .indicators-btn {
+            font-size: 12px;
+            padding: 6px 10px;
+        }
+        
+        .grid-btn, .settings-btn {
+            width: 36px;
+            height: 36px;
+            font-size: 16px;
+        }
+        
+        .symbol-header {
+            padding: 0 8px;
+            gap: 8px;
+            height: 60px;
+            flex-wrap: wrap;
+        }
+        
+        .symbol-badge {
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+        
+        .exchange-logo {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .symbol-name {
+            font-size: 14px;
+        }
+        
+        .symbol-type {
+            font-size: 10px;
+        }
+        
+        .timeframe-group {
+            gap: 2px;
+            padding: 3px;
+        }
+        
+        .tf-btn {
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+        
+        .expand-icon {
+            display: none;
+        }
+        
+        .current-price {
+            font-size: 16px;
+            width: 100%;
+            text-align: center;
+            margin-left: 0;
+            margin-top: 4px;
+        }
+        
+        .main-container {
+            height: calc(100vh - 110px);
+        }
+        
+        .left-toolbar {
+            width: 50px;
+            padding: 8px 4px;
+            gap: 4px;
+        }
+        
+        .tool-icon {
+            width: 42px;
+            height: 42px;
+            font-size: 18px;
+        }
+        
+        .cvd-bar {
+            height: 35px;
+            padding: 0 8px;
+            gap: 16px;
+            overflow-x: auto;
+        }
+        
+        .cvd-label {
+            font-size: 11px;
+            flex-shrink: 0;
+        }
+        
+        .cvd-values {
             gap: 12px;
+            flex-wrap: nowrap;
+        }
+        
+        .cvd-value {
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        
+        .footprint-bar {
+            height: 160px;
+        }
+        
+        .fp-column {
+            min-width: 110px;
+            max-width: 110px;
+        }
+        
+        .fp-title-row {
+            height: 35px;
+        }
+        
+        .fp-title {
+            font-size: 10px;
+        }
+        
+        .fp-stat-cell {
+            padding: 6px 4px;
+        }
+        
+        .fp-stat-value {
+            font-size: 13px;
+        }
+        
+        .fp-stat-label {
+            font-size: 8px;
+        }
+        
+        .status-indicator {
+            top: 52px;
+            right: 8px;
+            padding: 4px 8px;
+            font-size: 10px;
+        }
+        
+        .status-dot {
+            width: 6px;
+            height: 6px;
+        }
+    }
+
+    /* Extra small mobile */
+    @media (max-width: 480px) {
+        .top-bar {
+            height: 45px;
+            padding: 0 6px;
+            gap: 6px;
+        }
+        
+        .menu-icon {
+            width: 32px;
+            height: 32px;
+            font-size: 14px;
         }
         
         .indicators-btn {
             display: none;
         }
         
+        .grid-btn, .settings-btn {
+            width: 32px;
+            height: 32px;
+            font-size: 14px;
+        }
+        
         .symbol-header {
-            padding: 0 12px;
-            gap: 8px;
+            height: 55px;
+            padding: 0 6px;
+        }
+        
+        .symbol-badge {
+            padding: 5px 8px;
         }
         
         .tf-btn {
-            padding: 6px 10px;
-            font-size: 12px;
+            padding: 5px 8px;
+            font-size: 10px;
+        }
+        
+        .current-price {
+            font-size: 14px;
+        }
+        
+        .main-container {
+            height: calc(100vh - 100px);
+        }
+        
+        .left-toolbar {
+            width: 44px;
+        }
+        
+        .tool-icon {
+            width: 38px;
+            height: 38px;
+            font-size: 16px;
         }
         
         .fp-column {
-            min-width: 100px;
-            max-width: 100px;
+            min-width: 90px;
+            max-width: 90px;
+        }
+        
+        .fp-stat-value {
+            font-size: 12px;
         }
     }
 </style>
@@ -712,7 +903,7 @@
 
         if (allCandles.length === 0) return;
 
-        // Price range
+        // Calculate price range
         let minPrice = Infinity;
         let maxPrice = -Infinity;
 
@@ -721,30 +912,38 @@
             maxPrice = Math.max(maxPrice, c.h);
         });
 
-        const padding = (maxPrice - minPrice) * 0.15;
+        const padding = (maxPrice - minPrice) * 0.1;
         minPrice -= padding;
         maxPrice += padding;
 
         // Grid
         drawGrid(w, h, minPrice, maxPrice);
 
-        // Candles
-        const candleW = CONFIG.candleWidth * zoomLevel;
-        const gap = CONFIG.candleGap * zoomLevel;
+        // Adjust candle width for mobile
+        const isMobile = w < 768;
+        const candleW = (isMobile ? CONFIG.candleWidth * 0.7 : CONFIG.candleWidth) * zoomLevel;
+        const gap = (isMobile ? CONFIG.candleGap * 0.6 : CONFIG.candleGap) * zoomLevel;
+        const priceScaleWidth = isMobile ? 60 : 80;
+        
         const totalWidth = allCandles.length * (candleW + gap);
-        const startX = w - totalWidth - 100 + scrollOffset;
+        const chartWidth = w - priceScaleWidth;
+        const startX = chartWidth - totalWidth + scrollOffset;
 
+        // Candles
         allCandles.forEach((candle, i) => {
             const x = startX + i * (candleW + gap);
-            if (x + candleW < 0 || x > w - 80) return;
+            if (x + candleW < 0 || x > chartWidth) return;
             drawCandle(candle, x, candleW, h, minPrice, maxPrice, i === allCandles.length - 1);
         });
 
         // Price scale
-        drawPriceScale(w, h, minPrice, maxPrice);
+        drawPriceScale(w, h, minPrice, maxPrice, priceScaleWidth);
     }
 
     function drawGrid(w, h, minPrice, maxPrice) {
+        const priceScaleWidth = w < 768 ? 60 : 80;
+        const chartWidth = w - priceScaleWidth;
+        
         ctx.strokeStyle = CONFIG.colors.grid;
         ctx.lineWidth = 1;
 
@@ -755,7 +954,7 @@
             const y = h - ((p - minPrice) / (maxPrice - minPrice)) * h;
             ctx.beginPath();
             ctx.moveTo(0, y);
-            ctx.lineTo(w - 80, y);
+            ctx.lineTo(chartWidth, y);
             ctx.stroke();
         }
     }
@@ -801,18 +1000,21 @@
 
     function drawFootprintInside(candle, x, w, h, minPrice, maxPrice) {
         if (!candle.fp || typeof candle.fp !== 'object') {
-            console.log('No footprint data for candle');
             return;
         }
+        
+        // Don't show footprint on very small candles (mobile)
+        const minWidth = window.innerWidth < 768 ? 60 : 80;
+        if (w < minWidth) return;
         
         const prices = Object.keys(candle.fp).map(p => parseFloat(p)).sort((a, b) => b - a);
         
         if (prices.length === 0) {
-            console.log('Empty footprint prices array');
             return;
         }
         
-        ctx.font = '11px monospace';
+        const fontSize = window.innerWidth < 480 ? 9 : (window.innerWidth < 768 ? 10 : 11);
+        ctx.font = `${fontSize}px monospace`;
         ctx.fontWeight = 'normal';
         
         let displayedCount = 0;
@@ -836,6 +1038,9 @@
             const ratio = bidVol / Math.max(askVol, 0.01);
             const isImbalance = ratio > 1.5 || ratio < (1/1.5);
 
+            const padding = window.innerWidth < 768 ? 4 : 6;
+            const textOffset = window.innerWidth < 768 ? 6 : 8;
+
             // Bid (left side)
             if (bidVol > 0) {
                 const color = isImbalance && bidVol > askVol ? '#fbbf24' : CONFIG.colors.bidVol;
@@ -843,13 +1048,13 @@
                 
                 if (bg !== 'transparent') {
                     ctx.fillStyle = bg;
-                    ctx.fillRect(x + 6, y - 7, w/2 - 8, 14);
+                    ctx.fillRect(x + padding, y - 7, w/2 - padding * 2, 14);
                 }
                 
                 ctx.fillStyle = color;
                 ctx.textAlign = 'left';
-                ctx.font = isImbalance && bidVol > askVol ? 'bold 11px monospace' : '11px monospace';
-                ctx.fillText(Math.round(bidVol), x + 8, y + 4);
+                ctx.font = isImbalance && bidVol > askVol ? `bold ${fontSize}px monospace` : `${fontSize}px monospace`;
+                ctx.fillText(Math.round(bidVol), x + textOffset, y + 4);
                 displayedCount++;
             }
 
@@ -860,27 +1065,30 @@
                 
                 if (bg !== 'transparent') {
                     ctx.fillStyle = bg;
-                    ctx.fillRect(x + w/2 + 2, y - 7, w/2 - 8, 14);
+                    ctx.fillRect(x + w/2 + padding/2, y - 7, w/2 - padding * 2, 14);
                 }
                 
                 ctx.fillStyle = color;
                 ctx.textAlign = 'right';
-                ctx.font = isImbalance && askVol > bidVol ? 'bold 11px monospace' : '11px monospace';
-                ctx.fillText(Math.round(askVol), x + w - 8, y + 4);
+                ctx.font = isImbalance && askVol > bidVol ? `bold ${fontSize}px monospace` : `${fontSize}px monospace`;
+                ctx.fillText(Math.round(askVol), x + w - textOffset, y + 4);
                 displayedCount++;
             }
         });
         
-        if (displayedCount > 0) {
-            console.log(`Displayed ${displayedCount} footprint entries in candle`);
+        if (displayedCount > 0 && displayedCount % 10 === 0) {
+            console.log(`Displayed ${displayedCount} footprint entries`);
         }
     }
 
-    function drawPriceScale(w, h, minPrice, maxPrice) {
+    function drawPriceScale(w, h, minPrice, maxPrice, priceScaleWidth) {
+        const scaleX = w - priceScaleWidth;
+        
         ctx.fillStyle = CONFIG.colors.bg;
-        ctx.fillRect(w - 80, 0, 80, h);
+        ctx.fillRect(scaleX, 0, priceScaleWidth, h);
 
-        ctx.font = '11px monospace';
+        const fontSize = w < 480 ? 9 : (w < 768 ? 10 : 11);
+        ctx.font = `${fontSize}px monospace`;
         ctx.fillStyle = CONFIG.colors.text;
         ctx.textAlign = 'left';
 
@@ -889,7 +1097,8 @@
 
         for (let p = startPrice; p <= maxPrice; p += step) {
             const y = h - ((p - minPrice) / (maxPrice - minPrice)) * h;
-            ctx.fillText(p.toFixed(0), w - 72, y + 4);
+            const textX = scaleX + (w < 768 ? 4 : 8);
+            ctx.fillText(p.toFixed(0), textX, y + 4);
         }
     }
 
