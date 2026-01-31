@@ -570,7 +570,7 @@
                     <option value="86400000">Daily</option>
                 </select>
                 <span class="tick-label" style="margin-left: 16px;">Tick Size:</span>
-                <input type="number" class="tick-input" id="tickSizeInput" value="0.25" step="0.25" min="0.25" max="200">
+                <input type="number" class="tick-input" id="tickSizeInput" value="40" step="1" min="1" max="200">
                 <button class="tool-btn" id="deltaCandleBtn" onclick="toggleDeltaCandle()">📊 Delta Candle</button>
                 <button class="tool-btn" onclick="zoom(1.2)">🔍 Zoom In</button>
                 <button class="tool-btn" onclick="zoom(0.8)">🔍 Zoom Out</button>
@@ -876,11 +876,11 @@
         candleWidth: 140,
         candleGap: 4,
         startPrice: 45000,  // Bitcoin starting price
-        tickSize: 0.50,     // BTC tick size ($0.50)
+        tickSize: 40,     // BTC tick size ($40 for mobile performance)
         priceScale: 2.5,
         imbalanceThreshold: 1.5,
         volumeProfileWidth: 150,  // Width of volume profile bars
-        showVolumeProfile: true  // Toggle for volume profile (enabled by default)
+        showVolumeProfile: false  // Disabled by default for mobile performance - turn on with button
     };
 
     // State
@@ -1117,16 +1117,17 @@
             loadHistoricalData().then(() => {
                 console.log('✅ Historical data loaded, starting live feed');
                 
-                // Subscribe to trades and orderbook
+                // Subscribe to trades only on mobile (orderbook too heavy)
+                const args = isMobile ? 
+                    [`publicTrade.${config.symbol}`] : 
+                    [`publicTrade.${config.symbol}`, `orderbook.50.${config.symbol}`];
+                
                 const subscribeMsg = {
                     op: 'subscribe',
-                    args: [
-                        `publicTrade.${config.symbol}`,
-                        `orderbook.50.${config.symbol}`
-                    ]
+                    args: args
                 };
                 
-                console.log('📡 Sending subscription:', subscribeMsg);
+                console.log('📡 Subscription:', isMobile ? 'Trades only (mobile)' : 'Trades + Orderbook');
                 exchangeSocket.send(JSON.stringify(subscribeMsg));
             });
         };
@@ -1253,24 +1254,36 @@
         }
     }
 
+    // Trade batching for performance
+    let tradeBatch = [];
+    let lastTradeUpdate = 0;
+    let tradeUpdateInterval = isMobile ? 1000 : 500; // Update every 1s on mobile, 500ms on desktop
+    
     function processBybitTrade(message) {
         if (!message.data || message.data.length === 0) {
-            console.log('⚠️ No trade data in message');
             return;
         }
         
-        console.log(`📊 Processing ${message.data.length} trades`);
+        // Batch trades instead of processing immediately
+        tradeBatch.push(...message.data);
         
-        message.data.forEach(trade => {
-            // trade.p = price, trade.v = quantity, trade.S = side (Buy/Sell)
+        const now = Date.now();
+        if (now - lastTradeUpdate < tradeUpdateInterval) {
+            return; // Skip this update
+        }
+        lastTradeUpdate = now;
+        
+        // Process batched trades
+        if (tradeBatch.length === 0) return;
+        
+        console.log(`📊 Processing ${tradeBatch.length} batched trades`);
+        
+        tradeBatch.forEach(trade => {
             const price = parseFloat(trade.p);
             const qty = parseFloat(trade.v);
             const isSell = trade.S === 'Sell';
             
-            console.log(`Trade: ${trade.S} ${qty} @ $${price}`);
-            
             if (!currentCandle) {
-                console.log(`Creating new candle at $${price}`);
                 currentCandle = createNewCandle(price);
             }
             
@@ -1279,10 +1292,9 @@
             currentCandle.l = Math.min(currentCandle.l, price);
             currentCandle.c = price;
             currentCandle.v += qty;
-            currentCandle.t = trade.T || Date.now();
             
-            // Update footprint
-            const priceKey = price.toFixed(CONFIG.tickSize === 0.50 ? 2 : 0);
+            // Update footprint - simplified for 40 tick
+            const priceKey = Math.round(price / CONFIG.tickSize) * CONFIG.tickSize;
             if (!currentCandle.fp[priceKey]) currentCandle.fp[priceKey] = { b: 0, a: 0 };
             
             if (isSell) {
@@ -1290,10 +1302,15 @@
             } else {
                 currentCandle.fp[priceKey].a += qty;
             }
-            
-            draw();
-            updateStatsTable();
         });
+        
+        tradeBatch = []; // Clear batch
+        
+        // Single draw and update after all trades
+        draw();
+        if (!isMobile || tradeBatch.length > 50) {
+            updateStatsTable();
+        }
     }
 
     function processBybitOrderbook(message) {
