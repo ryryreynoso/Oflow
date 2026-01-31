@@ -902,12 +902,21 @@
     let showDeltaCandle = false; // Toggle for delta candles
     let currentSessionStart = null; // Track current session for volume profile
     
+    // Mobile optimization
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+        drawThrottle = 33; // 30fps on mobile for battery
+        console.log('📱 Mobile device detected - optimized performance enabled');
+    }
+    
     // Momentum scrolling
     let velocityX = 0;
     let velocityY = 0;
     let lastMoveTime = Date.now();
     let isDecelerating = false;
     let animationFrame = null;
+    let lastDrawTime = 0;
+    let drawThrottle = 16; // ~60fps max
     let selectedObject = null; // For context menu
     let contextMenuType = null; // 'line' or 'fib'
     let isDraggingObject = false; // For moving lines/fibs
@@ -992,11 +1001,11 @@
     }
 
     async function loadHistoricalData() {
-        console.log('📥 Loading 7 days of historical data...');
+        console.log('📥 Loading 3 days of historical data (mobile optimized)...');
         
         const config = EXCHANGE_CONFIG.bybit;
         const now = Date.now();
-        const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
+        const threeDaysAgo = now - (3 * 24 * 60 * 60 * 1000); // 3 days instead of 7
         
         // Map interval to Bybit format
         const intervalMap = {
@@ -1010,10 +1019,10 @@
         const bybitInterval = intervalMap[candleInterval] || '5';
         
         try {
-            // Bybit REST API for klines
-            const url = `https://api.bybit.com/v5/market/kline?category=linear&symbol=${config.symbol}&interval=${bybitInterval}&start=${sevenDaysAgo}&limit=1000`;
+            // Bybit REST API for klines (limit to 500 for speed)
+            const url = `https://api.bybit.com/v5/market/kline?category=linear&symbol=${config.symbol}&interval=${bybitInterval}&start=${threeDaysAgo}&limit=500`;
             
-            console.log('📡 Fetching from:', url);
+            console.log('📡 Fetching from Bybit API...');
             
             const response = await fetch(url);
             const data = await response.json();
@@ -1021,7 +1030,7 @@
             if (data.retCode === 0 && data.result && data.result.list) {
                 const klines = data.result.list;
                 
-                console.log(`✅ Received ${klines.length} historical candles`);
+                console.log(`✅ Received ${klines.length} candles`);
                 
                 // Convert Bybit klines to our candle format
                 // Bybit format: [startTime, open, high, low, close, volume, turnover]
@@ -1050,18 +1059,18 @@
                     candleStartTime = alignToTimeframe(lastCandle.t + candleInterval, candleInterval);
                 }
                 
-                console.log('📊 Historical data loaded:', {
+                console.log('📊 Data loaded:', {
                     candles: candles.length,
-                    from: new Date(candles[0].t).toLocaleString(),
-                    to: new Date(candles[candles.length - 1].t).toLocaleString()
+                    from: new Date(candles[0].t).toLocaleTimeString(),
+                    to: new Date(candles[candles.length - 1].t).toLocaleTimeString()
                 });
                 
                 draw();
             } else {
-                console.error('❌ Failed to load historical data:', data);
+                console.error('❌ Failed to load data:', data);
             }
         } catch (error) {
-            console.error('❌ Error loading historical data:', error);
+            console.error('❌ Error loading data:', error);
         }
     }
 
@@ -1405,7 +1414,7 @@
             // Close current candle and start new one
             if (currentCandle && isConnected) {
                 candles.push(currentCandle);
-                if (candles.length > 200) {
+                if (candles.length > 100) { // Keep last 100 candles in memory (mobile optimized)
                     candles.shift(); // Keep only last 200 candles
                 }
             }
@@ -1607,7 +1616,17 @@
         draw();
     }
 
+    // Throttled draw for mobile performance
     function draw() {
+        const now = Date.now();
+        if (now - lastDrawTime < drawThrottle) {
+            return; // Skip this draw call
+        }
+        lastDrawTime = now;
+        drawInternal();
+    }
+
+    function drawInternal() {
         const w = canvas.width / (window.devicePixelRatio || 1);
         const h = canvas.height / (window.devicePixelRatio || 1);
 
@@ -1785,7 +1804,7 @@
     function calculateVolumeProfile(candles) {
         volumeProfileData = {};
         
-        if (candles.length === 0) return;
+        if (candles.length === 0 || candles.length < 10) return; // Skip if too few candles
         
         // Get current session based on latest candle time
         const latestTime = candles[candles.length - 1].t;
@@ -1819,14 +1838,11 @@
             sessionEnd.setHours(13, 59, 59, 999);
         }
         
-        // Log new session start
+        // Log new session start (throttled)
         const sessionStartTime = sessionStart.getTime();
         if (currentSessionStart !== sessionStartTime) {
             currentSessionStart = sessionStartTime;
-            console.log('📊 New Volume Profile Session:', {
-                start: sessionStart.toLocaleTimeString(),
-                date: sessionStart.toLocaleDateString()
-            });
+            console.log('📊 Session:', sessionStart.toLocaleTimeString());
         }
         
         // Filter candles for current session only
@@ -1834,8 +1850,11 @@
             return c.t >= sessionStart.getTime() && c.t <= sessionEnd.getTime();
         });
         
+        if (sessionCandles.length === 0) return;
+        
         // Aggregate volume at each price level from session candles
         sessionCandles.forEach(candle => {
+            if (!candle.fp) return;
             Object.keys(candle.fp).forEach(priceKey => {
                 const fp = candle.fp[priceKey];
                 if (!volumeProfileData[priceKey]) {
@@ -1960,10 +1979,15 @@
     }
 
     function drawSessionMarkers(allCandles, startX, candleW, gap, h, w) {
-        // Find all candles at 15:00 (session start times)
+        // Find all candles at 15:00 (session start times) - only check visible range
         const sessionStarts = [];
         
         allCandles.forEach((candle, i) => {
+            const x = startX + (i * (candleW + gap)) + (candleW / 2);
+            
+            // Skip if off-screen (optimization)
+            if (x < -100 || x > w + 100) return;
+            
             const candleDate = new Date(candle.t);
             const hour = candleDate.getHours();
             const minute = candleDate.getMinutes();
@@ -1971,8 +1995,7 @@
             // Mark 15:00 candles (3:00 PM)
             if (hour === 15 && minute === 0) {
                 sessionStarts.push({
-                    index: i,
-                    time: candle.t,
+                    x: x,
                     date: candleDate
                 });
             }
@@ -1980,18 +2003,16 @@
         
         // Draw vertical lines at each session start
         sessionStarts.forEach(session => {
-            const x = startX + (session.index * (candleW + gap)) + (candleW / 2);
-            
             // Skip if off-screen
-            if (x < 0 || x > w - 80) return;
+            if (session.x < 0 || session.x > w - 80) return;
             
             // Draw vertical line
             ctx.strokeStyle = '#fbbf24';
             ctx.lineWidth = 2;
             ctx.setLineDash([5, 5]);
             ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, h);
+            ctx.moveTo(session.x, 0);
+            ctx.lineTo(session.x, h);
             ctx.stroke();
             ctx.setLineDash([]);
             
@@ -1999,12 +2020,12 @@
             ctx.fillStyle = '#fbbf24';
             ctx.font = 'bold 10px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('SESSION', x, 15);
-            ctx.fillText('15:00', x, 28);
+            ctx.fillText('SESSION', session.x, 15);
+            ctx.fillText('15:00', session.x, 28);
             
             // Draw label with date at bottom
             const dateStr = session.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            ctx.fillText(dateStr, x, h - 10);
+            ctx.fillText(dateStr, session.x, h - 10);
         });
     }
 
@@ -2114,11 +2135,18 @@
     function drawFootprintInside(candle, x, w, h, minPrice, maxPrice) {
         if (!candle.fp) return; // Safety check
         
+        // Skip footprint on mobile if candle too small
+        if (isMobile && w < 60) return;
+        
         const prices = Object.keys(candle.fp).map(p => parseFloat(p)).sort((a, b) => b - a);
         
-        ctx.font = '9px monospace';
+        // Limit footprint entries on mobile for performance
+        const maxEntries = isMobile ? 10 : 20;
+        const displayPrices = prices.slice(0, maxEntries);
         
-        prices.forEach(price => {
+        ctx.font = isMobile ? '8px monospace' : '9px monospace';
+        
+        displayPrices.forEach(price => {
             const key = price.toFixed(2);
             const fp = candle.fp[key];
             if (!fp) return; // Safety check
