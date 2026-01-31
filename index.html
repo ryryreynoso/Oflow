@@ -907,6 +907,7 @@
     let velocityY = 0;
     let lastMoveTime = Date.now();
     let isDecelerating = false;
+    let isCoasting = false; // For touch momentum
     let animationFrame = null;
     let lastDrawTime = 0;
     let drawThrottle = 16; // ~60fps max
@@ -2964,6 +2965,12 @@
         }
         
         momentumFrame();
+    }
+    
+    // Alias for touch events
+    function startCoasting() {
+        isCoasting = true;
+        startMomentumScroll();
     }
 
     // Right-click context menu
