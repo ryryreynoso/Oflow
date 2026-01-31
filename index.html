@@ -570,7 +570,7 @@
                     <option value="86400000">Daily</option>
                 </select>
                 <span class="tick-label" style="margin-left: 16px;">Tick Size:</span>
-                <input type="number" class="tick-input" id="tickSizeInput" value="40" step="1" min="1" max="200">
+                <input type="number" class="tick-input" id="tickSizeInput" value="1" step="1" min="1" max="200">
                 <button class="tool-btn" id="deltaCandleBtn" onclick="toggleDeltaCandle()">📊 Delta Candle</button>
                 <button class="tool-btn" onclick="zoom(1.2)">🔍 Zoom In</button>
                 <button class="tool-btn" onclick="zoom(0.8)">🔍 Zoom Out</button>
@@ -876,7 +876,7 @@
         candleWidth: 140,
         candleGap: 4,
         startPrice: 45000,  // Bitcoin starting price
-        tickSize: 40,     // BTC tick size ($40 for mobile performance)
+        tickSize: 1,     // BTC tick size ($1 - good balance for mobile)
         priceScale: 2.5,
         imbalanceThreshold: 1.5,
         volumeProfileWidth: 150,  // Width of volume profile bars
@@ -1648,6 +1648,9 @@
     function drawInternal() {
         const w = canvas.width / (window.devicePixelRatio || 1);
         const h = canvas.height / (window.devicePixelRatio || 1);
+        
+        // Responsive price scale width
+        const priceScaleWidth = isMobile ? 70 : 80;
 
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, w, h);
@@ -1690,7 +1693,7 @@
         const totalWidth = allCandles.length * (candleW + gap);
         const leftMargin = CONFIG.showVolumeProfile ? 20 + CONFIG.volumeProfileWidth + 30 : 20;
         const rightMargin = 100; // Extra space to see developing candles
-        const chartWidth = w - 80 - rightMargin; // Space for candles (exclude price scale + margin)
+        const chartWidth = w - priceScaleWidth - rightMargin; // Space for candles (exclude price scale + margin)
         
         // Allow free scrolling - don't clamp to leftMargin
         const startX = chartWidth - totalWidth + scrollOffset;
@@ -1698,7 +1701,7 @@
         allCandles.forEach((candle, i) => {
             const x = startX + i * (candleW + gap);
             // Don't draw if off-screen or overlapping price scale
-            if (x + candleW < 0 || x > w - 80) return;
+            if (x + candleW < 0 || x > w - priceScaleWidth) return;
             drawCandle(candle, x, candleW, h, minPrice, maxPrice, i === allCandles.length - 1);
         });
 
@@ -1721,7 +1724,7 @@
             
             ctx.beginPath();
             ctx.moveTo(0, y);
-            ctx.lineTo(w - 80, y);
+            ctx.lineTo(w - priceScaleWidth, y);
             ctx.stroke();
             ctx.setLineDash([]);
 
@@ -1748,7 +1751,7 @@
             const totalWidth = allCandles.length * (candleW + gap);
             const leftMargin = CONFIG.showVolumeProfile ? 20 + CONFIG.volumeProfileWidth + 30 : 20;
             const rightMargin = 100;
-            const chartWidth = w - 80 - rightMargin;
+            const chartWidth = w - priceScaleWidth - rightMargin;
             
             // Allow free scrolling
             const startX = chartWidth - totalWidth + scrollOffset;
@@ -1783,12 +1786,12 @@
                 // Draw line only between start and end X positions
                 ctx.beginPath();
                 ctx.moveTo(Math.max(0, fibMinX), y);
-                ctx.lineTo(Math.min(w - 80, fibMaxX), y);
+                ctx.lineTo(Math.min(w - priceScaleWidth, fibMaxX), y);
                 ctx.stroke();
 
                 // Label on right side of the fib (not at edge of chart)
                 const labelX = Math.min(fibMaxX + 5, w - 80);
-                if (labelX < w - 85) { // Only show if there's room
+                if (labelX < w - priceScaleWidth - 5) { // Only show if there's room
                     ctx.fillStyle = levelColor;
                     ctx.font = 'bold 10px monospace';
                     ctx.textAlign = 'left';
@@ -1808,7 +1811,7 @@
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(Math.max(0, startXPos), y1);
-            ctx.lineTo(Math.min(w - 80, startXPos + 100), y1); // Show preview extending 100px
+            ctx.lineTo(Math.min(w - priceScaleWidth, startXPos + 100), y1); // Show preview extending 100px
             ctx.stroke();
             
             ctx.fillStyle = '#fbbf24';
@@ -2023,7 +2026,7 @@
         // Draw vertical lines at each session start
         sessionStarts.forEach(session => {
             // Skip if off-screen
-            if (session.x < 0 || session.x > w - 80) return;
+            if (session.x < 0 || session.x > w - priceScaleWidth) return;
             
             // Draw vertical line
             ctx.strokeStyle = '#fbbf24';
@@ -2050,6 +2053,8 @@
 
 
     function drawPriceScale(w, h, minPrice, maxPrice) {
+        const priceScaleWidth = isMobile ? 70 : 80;
+        
         // Apply price scale zoom
         const center = (minPrice + maxPrice) / 2;
         const range = (maxPrice - minPrice) / priceScaleZoom;
@@ -2059,20 +2064,19 @@
         // Calculate step based on zoom level for proper spacing
         let step = CONFIG.tickSize;
         if (priceScaleZoom < 0.5) {
-            step = CONFIG.tickSize * 4; // Show every 1.0 when zoomed out
+            step = CONFIG.tickSize * 4;
         } else if (priceScaleZoom < 1) {
-            step = CONFIG.tickSize * 2; // Show every 0.50
+            step = CONFIG.tickSize * 2;
         }
-        // else show every 0.25 when zoomed in
 
-        ctx.font = '10px monospace';
+        ctx.font = isMobile ? '9px monospace' : '10px monospace';
         ctx.fillStyle = '#6b7280';
         ctx.strokeStyle = '#1a1a1a';
         ctx.lineWidth = 1;
 
         // Draw price scale background
         ctx.fillStyle = '#0a0a0a';
-        ctx.fillRect(w - 80, 0, 80, h);
+        ctx.fillRect(w - priceScaleWidth, 0, priceScaleWidth, h);
 
         ctx.fillStyle = '#6b7280';
         
@@ -2084,13 +2088,14 @@
             ctx.strokeStyle = '#1a1a1a';
             ctx.beginPath();
             ctx.moveTo(0, y);
-            ctx.lineTo(w - 80, y);
+            ctx.lineTo(w - priceScaleWidth, y);
             ctx.stroke();
 
-            // Price label
+            // Price label - adjust position based on scale width
             ctx.fillStyle = '#6b7280';
-            ctx.font = '10px monospace';
-            ctx.fillText(p.toFixed(2), w - 72, y + 3);
+            ctx.font = isMobile ? '9px monospace' : '10px monospace';
+            const labelX = w - priceScaleWidth + 5; // 5px padding from left edge
+            ctx.fillText(p.toFixed(2), labelX, y + 3);
         }
 
         return { minPrice, maxPrice }; // Return adjusted range
@@ -2289,7 +2294,7 @@
         const totalWidth = allCandles.length * (candleW + gap);
         const leftMargin = CONFIG.showVolumeProfile ? 20 + CONFIG.volumeProfileWidth + 30 : 20;
         const rightMargin = 100; // Match candle drawing
-        const chartWidth = w - 80 - rightMargin;
+        const chartWidth = w - priceScaleWidth - rightMargin;
         
         // Allow free scrolling
         const startX = chartWidth - totalWidth + scrollOffset;
@@ -2687,7 +2692,7 @@
         const w = canvas.width / (window.devicePixelRatio || 1);
 
         // Price scale drag
-        if (x > w - 80) {
+        if (x > w - priceScaleWidth) {
             isDraggingPriceScale = true;
             priceScaleDragStart = e.clientY;
             canvas.style.cursor = 'ns-resize';
@@ -2754,7 +2759,7 @@
         const w = canvas.width / (window.devicePixelRatio || 1);
         
         // Price scale hover
-        if (!isDragging && !isDraggingPriceScale && !isDraggingObject && x > w - 80) {
+        if (!isDragging && !isDraggingPriceScale && !isDraggingObject && x > w - priceScaleWidth) {
             canvas.style.cursor = 'ns-resize';
         } else if (!isDragging && !isDraggingPriceScale && !isDrawingFib && !isDraggingObject) {
             // Check if hovering over line or fib
@@ -2831,7 +2836,7 @@
                         ctx.setLineDash([5, 5]);
                         ctx.beginPath();
                         ctx.moveTo(Math.max(0, Math.min(startXPos, currentXPos)), y2);
-                        ctx.lineTo(Math.min(w - 80, Math.max(startXPos, currentXPos)), y2);
+                        ctx.lineTo(Math.min(w - priceScaleWidth, Math.max(startXPos, currentXPos)), y2);
                         ctx.stroke();
                         ctx.setLineDash([]);
                         
@@ -3137,7 +3142,7 @@
     // Show candle tooltip
     function showCandleTooltip(x, y) {
         const w = canvas.width / (window.devicePixelRatio || 1);
-        if (x > w - 80) {
+        if (x > w - priceScaleWidth) {
             document.getElementById('tooltip').style.display = 'none';
             return;
         }
@@ -3150,7 +3155,7 @@
         const totalWidth = allCandles.length * (candleW + gap);
         const leftMargin = CONFIG.showVolumeProfile ? 20 + CONFIG.volumeProfileWidth + 30 : 20;
         const rightMargin = 100;
-        const chartWidth = w - 80 - rightMargin;
+        const chartWidth = w - priceScaleWidth - rightMargin;
         
         // Allow free scrolling
         const startX = chartWidth - totalWidth + scrollOffset;
@@ -3199,7 +3204,7 @@
         const w = canvas.width / (window.devicePixelRatio || 1);
         
         // Check if scrolling over price scale (right side)
-        if (x > w - 80) {
+        if (x > w - priceScaleWidth) {
             // Zoom price scale
             const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
             priceScaleZoom *= zoomFactor;
@@ -3231,7 +3236,7 @@
             const w = canvas.width / (window.devicePixelRatio || 1);
             
             // Check price scale - allow scrolling
-            if (x > w - 80) {
+            if (x > w - priceScaleWidth) {
                 isPriceScaleTouching = true;
                 priceScaleTouchStart = touch.clientY;
                 return;
@@ -3383,7 +3388,7 @@
                     ctx.setLineDash([5, 5]);
                     ctx.beginPath();
                     ctx.moveTo(Math.max(0, Math.min(startXPos, currentXPos)), y2);
-                    ctx.lineTo(Math.min(w - 80, Math.max(startXPos, currentXPos)), y2);
+                    ctx.lineTo(Math.min(w - priceScaleWidth, Math.max(startXPos, currentXPos)), y2);
                     ctx.stroke();
                     ctx.setLineDash([]);
                 }
@@ -3519,7 +3524,7 @@
         const w = canvas.width / (window.devicePixelRatio || 1);
         
         // Check if clicking on price scale area (right 80px)
-        if (x > w - 80) {
+        if (x > w - priceScaleWidth) {
             isDraggingPriceScale = true;
             priceScaleDragStart = e.clientY;
             canvas.style.cursor = 'ns-resize';
