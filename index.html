@@ -902,13 +902,6 @@
     let showDeltaCandle = false; // Toggle for delta candles
     let currentSessionStart = null; // Track current session for volume profile
     
-    // Mobile optimization
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (isMobile) {
-        drawThrottle = 33; // 30fps on mobile for battery
-        console.log('📱 Mobile device detected - optimized performance enabled');
-    }
-    
     // Momentum scrolling
     let velocityX = 0;
     let velocityY = 0;
@@ -918,6 +911,13 @@
     let lastDrawTime = 0;
     let drawThrottle = 16; // ~60fps max
     let selectedObject = null; // For context menu
+    
+    // Mobile optimization - must come after drawThrottle declaration
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+        drawThrottle = 33; // 30fps on mobile for battery
+        console.log('📱 Mobile device detected - optimized performance enabled');
+    }
     let contextMenuType = null; // 'line' or 'fib'
     let isDraggingObject = false; // For moving lines/fibs
     let draggedObject = null; // The object being dragged
