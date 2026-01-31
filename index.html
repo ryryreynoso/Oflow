@@ -908,6 +908,7 @@
     let lastMoveTime = Date.now();
     let isDecelerating = false;
     let isCoasting = false; // For touch momentum
+    let coastingAnimationFrame = null; // For touch coasting animation
     let animationFrame = null;
     let lastDrawTime = 0;
     let drawThrottle = 16; // ~60fps max
@@ -2969,6 +2970,9 @@
     
     // Alias for touch events
     function startCoasting() {
+        if (coastingAnimationFrame) {
+            cancelAnimationFrame(coastingAnimationFrame);
+        }
         isCoasting = true;
         startMomentumScroll();
     }
